@@ -43,16 +43,16 @@ class MethodMessage(JsonMessage):
     def __init__(
         self,
         name: str,
-        methodType: str,
+        method_type: str,
         object: str,
-        objectTypes: List[str],
+        object_types: List[str],
         attributes: List[Attribute],
     ):
         self.type = "method"
         self.name = name
-        self.method_type = methodType
+        self.method_type = method_type
         self.object = object
-        self.object_types = objectTypes
+        self.object_types = object_types
         self.attributes = attributes
 
 
@@ -66,28 +66,36 @@ class Message:
 
     def __init__(
         self,
-        filePath: str,
-        fromLine: int,
-        toLine: int,
-        fromColumn: int,
-        toColumn: int,
+        file_path: str,
+        from_line: int,
+        to_line: int,
+        from_column: int,
+        to_column: int,
         content: Union[ModelMessage, MethodMessage],
     ):
-        self.file_path = filePath
-        self.from_line = fromLine
-        self.to_line = toLine
-        self.from_column = fromColumn
-        self.to_column = toColumn
+        self.file_path = file_path
+        self.from_line = from_line
+        self.to_line = to_line
+        self.from_column = from_column
+        self.to_column = to_column
         self.content = content
 
 
 def debug(*msg):
-    print(*msg, file=sys.stderr)
+    print("DEBUG", *msg, file=sys.stderr)
 
 
 def output(msg: Message):
     OUTPUT.append(msg)
     print(json.dumps(msg, default=lambda o: vars(o)), file=sys.stderr)
+
+
+def recover_expr_name(expr):
+    if isinstance(expr, NameExpr):
+        return expr.name
+    if isinstance(expr, MemberExpr):
+        return f"{recover_expr_name(expr.expr)}.{expr.name}"
+    return None
 
 
 class DjangoAnalyzer(Plugin):
@@ -97,13 +105,13 @@ class DjangoAnalyzer(Plugin):
         """Collects the model definitions."""
 
         def callback(ctx: ClassDefContext):
-            current_file = ctx.api.modules[ctx.api.cur_mod_id]
             if ctx.cls.base_type_exprs:
                 for base_type_expr in ctx.cls.base_type_exprs:
                     if (
                         isinstance(base_type_expr, NameExpr)
                         or isinstance(base_type_expr, MemberExpr)
                     ) and base_type_expr.fullname == "django.db.models.base.Model":
+                        current_file = ctx.api.modules[ctx.api.cur_mod_id]
                         message = Message(
                             current_file.path,
                             ctx.cls.line,
@@ -116,19 +124,31 @@ class DjangoAnalyzer(Plugin):
 
         return callback
 
-    # def get_method_hook(
-    #     self, fullname: str
-    # ) -> Union[Callable[[MethodContext], Type], None]:
-    #     """Collects the model method calls."""
+    def get_method_hook(
+        self, fullname: str
+    ) -> Union[Callable[[MethodContext], Type], None]:
+        """Collects the model method calls."""
 
-    #     def callback(ctx: MethodContext) -> Type:
-    #         if "filter" in fullname and "django" in fullname:
-    #             debug(
-    #                 fullname, ":", ctx.type.type, ctx.type.args, ctx.context.callee.name
-    #             )
-    #         return ctx.default_return_type
+        def callback(ctx: MethodContext) -> Type:
+            if "filter" in fullname and "django" in fullname:
+                message = Message(
+                    ctx.api.path,
+                    ctx.context.callee.line,
+                    ctx.context.callee.end_line,
+                    ctx.context.callee.column,
+                    ctx.context.callee.end_column,
+                    content=MethodMessage(
+                        name=ctx.context.callee.name,
+                        method_type="read",
+                        object=recover_expr_name(ctx.context.callee),
+                        object_types=[str(ctx.type)],
+                        attributes=[],
+                    ),
+                )
+                output(message)
+            return ctx.default_return_type
 
-    #     return callback
+        return callback
 
 
 def plugin(version: str):
