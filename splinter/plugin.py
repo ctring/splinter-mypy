@@ -4,55 +4,81 @@ from typing import Callable, List, Union
 from mypy.plugin import Plugin, ClassDefContext, MethodContext
 from mypy.nodes import MemberExpr, NameExpr
 from mypy.types import Type
+from splinter import OUTPUT
+
+API_READ = ["filter"]
+API_WRITE = ["save", "delete"]
 
 
-class Location:
-    path: str
-    line: int
-    column: int
-    end_line: Union[int, None]
-    end_column: Union[int, None]
+class JsonMessage:
+    type: str
+
+    def __init__(self, type: str):
+        self.type = type
+
+
+class ModelMessage(JsonMessage):
+    name: str
+
+    def __init__(self, name: str):
+        self.type = "model"
+        self.name = name
+
+
+class Attribute:
+    name: str
+    start_line: str
+    end_line: str
+    start_column: str
+    end_column: str
+
+
+class MethodMessage(JsonMessage):
+    name: str
+    method_type: str
+    object: str
+    object_types: List[str]
+    attributes: List[Attribute]
 
     def __init__(
         self,
-        path: str,
-        line: int,
-        column: int,
-        end_line: Union[int, None],
-        end_column: Union[int, None],
+        name: str,
+        methodType: str,
+        object: str,
+        objectTypes: List[str],
+        attributes: List[Attribute],
     ):
-        self.path = path
-        self.line = line
-        self.column = column
-        self.end_line = end_line
-        self.end_column = end_column
+        self.type = "method"
+        self.name = name
+        self.method_type = methodType
+        self.object = object
+        self.object_types = objectTypes
+        self.attributes = attributes
 
 
 class Message:
-    type: str
-    location: Location
+    file_path: str
+    from_line: int
+    to_line: int
+    from_column: int
+    to_column: int
+    content: Union[ModelMessage, MethodMessage]
 
-
-class ModelMessage(Message):
-    name: str
-
-    def __init__(self, name: str, location: Location):
-        self.type = "model"
-        self.name = name
-        self.location = location
-
-
-class MethodMessage(Message):
-    name: str
-    method: str
-    callee: List[str]
-
-    def __init__(self, name: str, method: str, callee: List[str], location: Location):
-        self.type = "method"
-        self.name = name
-        self.method = method
-        self.callee = callee
-        self.location = location
+    def __init__(
+        self,
+        filePath: str,
+        fromLine: int,
+        toLine: int,
+        fromColumn: int,
+        toColumn: int,
+        content: Union[ModelMessage, MethodMessage],
+    ):
+        self.file_path = filePath
+        self.from_line = fromLine
+        self.to_line = toLine
+        self.from_column = fromColumn
+        self.to_column = toColumn
+        self.content = content
 
 
 def debug(*msg):
@@ -60,6 +86,7 @@ def debug(*msg):
 
 
 def output(msg: Message):
+    OUTPUT.append(msg)
     print(json.dumps(msg, default=lambda o: vars(o)), file=sys.stderr)
 
 
@@ -77,14 +104,15 @@ class DjangoAnalyzer(Plugin):
                         isinstance(base_type_expr, NameExpr)
                         or isinstance(base_type_expr, MemberExpr)
                     ) and base_type_expr.fullname == "django.db.models.base.Model":
-                        location = Location(
+                        message = Message(
                             current_file.path,
                             ctx.cls.line,
-                            ctx.cls.column,
                             ctx.cls.end_line,
+                            ctx.cls.column,
                             ctx.cls.end_column,
+                            content=ModelMessage(ctx.cls.name),
                         )
-                        output(ModelMessage(fullname, location))
+                        output(message)
 
         return callback
 
