@@ -1,0 +1,8 @@
+[project]
+name = "splinter"
+version = "0.0.1"
+dependencies = ["mypy", "django-stubs"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

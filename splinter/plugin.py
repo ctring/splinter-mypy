@@ -4,20 +4,21 @@ from typing import Callable, List, Union
 from mypy.plugin import Plugin, ClassDefContext, MethodContext
 from mypy.nodes import MemberExpr, NameExpr
 from mypy.types import Type
-from splinter import OUTPUT
+
+from splinter import MESSAGES
 
 API_READ = ["filter"]
 API_WRITE = ["save", "delete"]
 
 
-class JsonMessage:
+class Content:
     type: str
 
     def __init__(self, type: str):
         self.type = type
 
 
-class ModelMessage(JsonMessage):
+class ModelContent(Content):
     name: str
 
     def __init__(self, name: str):
@@ -27,57 +28,57 @@ class ModelMessage(JsonMessage):
 
 class Attribute:
     name: str
-    start_line: str
-    end_line: str
-    start_column: str
-    end_column: str
+    startLine: str
+    endLine: str
+    startColumn: str
+    endColumn: str
 
 
-class MethodMessage(JsonMessage):
+class MethodContent(Content):
     name: str
-    method_type: str
+    methodType: str
     object: str
-    object_types: List[str]
+    objectTypes: List[str]
     attributes: List[Attribute]
 
     def __init__(
         self,
         name: str,
-        method_type: str,
+        methodType: str,
         object: str,
-        object_types: List[str],
+        objectTypes: List[str],
         attributes: List[Attribute],
     ):
         self.type = "method"
         self.name = name
-        self.method_type = method_type
+        self.method_type = methodType
         self.object = object
-        self.object_types = object_types
+        self.objectTypes = objectTypes
         self.attributes = attributes
 
 
 class Message:
-    file_path: str
-    from_line: int
-    to_line: int
-    from_column: int
-    to_column: int
-    content: Union[ModelMessage, MethodMessage]
+    filePath: str
+    fromLine: int
+    toLine: int
+    fromColumn: int
+    toColumn: int
+    content: Content
 
     def __init__(
         self,
-        file_path: str,
-        from_line: int,
-        to_line: int,
-        from_column: int,
-        to_column: int,
-        content: Union[ModelMessage, MethodMessage],
+        filePath: str,
+        fromLine: int,
+        toLine: int,
+        fromColumn: int,
+        toColumn: int,
+        content: Content,
     ):
-        self.file_path = file_path
-        self.from_line = from_line
-        self.to_line = to_line
-        self.from_column = from_column
-        self.to_column = to_column
+        self.filePath = filePath
+        self.fromLine = fromLine
+        self.toLine = toLine
+        self.fromColumn = fromColumn
+        self.toColumn = toColumn
         self.content = content
 
 
@@ -86,7 +87,7 @@ def debug(*msg):
 
 
 def output(msg: Message):
-    OUTPUT.append(msg)
+    MESSAGES.append(msg)
     print(json.dumps(msg, default=lambda o: vars(o)), file=sys.stderr)
 
 
@@ -118,7 +119,7 @@ class DjangoAnalyzer(Plugin):
                             ctx.cls.end_line,
                             ctx.cls.column,
                             ctx.cls.end_column,
-                            content=ModelMessage(ctx.cls.name),
+                            content=ModelContent(ctx.cls.name),
                         )
                         output(message)
 
@@ -137,11 +138,11 @@ class DjangoAnalyzer(Plugin):
                     ctx.context.callee.end_line,
                     ctx.context.callee.column,
                     ctx.context.callee.end_column,
-                    content=MethodMessage(
+                    content=MethodContent(
                         name=ctx.context.callee.name,
-                        method_type="read",
+                        methodType="read",
                         object=recover_expr_name(ctx.context.callee),
-                        object_types=[str(ctx.type)],
+                        objectTypes=[str(ctx.type)],
                         attributes=[],
                     ),
                 )
