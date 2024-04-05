@@ -5,6 +5,7 @@ from typing import Tuple
 
 CONFIG_FILE = pathlib.Path(__file__).parent.resolve() / "mypy.ini"
 _MESSAGES = []
+_MODELS = set()
 
 
 def run_mypy(path: str) -> Tuple[list, Tuple[str, str, int]]:
@@ -15,6 +16,7 @@ def run_mypy(path: str) -> Tuple[list, Tuple[str, str, int]]:
     global _MESSAGES
     messages = _MESSAGES
     _MESSAGES = []
+    _MODELS.clear()
 
     return messages, output
 
@@ -27,5 +29,6 @@ def run_mypy_text(text) -> Tuple[list, Tuple[str, str, int]]:
     global _MESSAGES
     messages = _MESSAGES
     _MESSAGES = []
+    _MODELS.clear()
 
     return messages, output

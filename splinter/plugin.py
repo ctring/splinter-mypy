@@ -5,7 +5,7 @@ from mypy.plugin import Plugin, ClassDefContext, MethodContext
 from mypy.nodes import MemberExpr, NameExpr, CallExpr
 from mypy.types import Type
 
-from splinter import _MESSAGES
+from splinter import _MESSAGES, _MODELS
 
 
 class Content:
@@ -84,6 +84,11 @@ def debug(*msg):
 
 
 def output(msg: Message):
+    if isinstance(msg.content, ModelContent):
+        if msg.content.name in _MODELS:
+            return
+        _MODELS.add(msg.content.name)
+
     _MESSAGES.append(msg)
     print(json.dumps(msg, default=lambda o: vars(o)), file=sys.stderr)
 
@@ -152,10 +157,10 @@ class DjangoAnalyzer(Plugin):
                 if methodType:
                     message = Message(
                         ctx.api.path,
-                        ctx.context.callee.line,
-                        ctx.context.callee.end_line,
-                        ctx.context.callee.column,
-                        ctx.context.callee.end_column,
+                        ctx.context.line,
+                        ctx.context.end_line,
+                        ctx.context.column,
+                        ctx.context.end_column,
                         content=MethodContent(
                             name=ctx.context.callee.name,
                             methodType=methodType,
