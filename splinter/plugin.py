@@ -5,10 +5,7 @@ from mypy.plugin import Plugin, ClassDefContext, MethodContext
 from mypy.nodes import MemberExpr, NameExpr, CallExpr
 from mypy.types import Type
 
-from splinter import MESSAGES
-
-API_READ = ["filter"]
-API_WRITE = ["save", "delete"]
+from splinter import _MESSAGES
 
 
 class Content:
@@ -38,7 +35,7 @@ class MethodContent(Content):
     name: str
     methodType: str
     object: str
-    objectTypes: List[str]
+    objectType: str
     attributes: List[Attribute]
 
     def __init__(
@@ -46,14 +43,14 @@ class MethodContent(Content):
         name: str,
         methodType: str,
         object: str,
-        objectTypes: List[str],
+        objectType: str,
         attributes: List[Attribute],
     ):
         self.type = "method"
         self.name = name
-        self.method_type = methodType
+        self.methodType = methodType
         self.object = object
-        self.objectTypes = objectTypes
+        self.objectType = objectType
         self.attributes = attributes
 
 
@@ -87,7 +84,7 @@ def debug(*msg):
 
 
 def output(msg: Message):
-    MESSAGES.append(msg)
+    _MESSAGES.append(msg)
     print(json.dumps(msg, default=lambda o: vars(o)), file=sys.stderr)
 
 
@@ -130,6 +127,9 @@ class DjangoAnalyzer(Plugin):
     ) -> Union[Callable[[MethodContext], Type], None]:
         """Collects the model method calls."""
 
+        API_READ = ["filter"]
+        API_WRITE = ["save", "delete"]
+
         def callback(ctx: MethodContext) -> Type:
             if isinstance(ctx.context, CallExpr):
                 methodType = None
@@ -149,7 +149,7 @@ class DjangoAnalyzer(Plugin):
                             name=ctx.context.callee.name,
                             methodType=methodType,
                             object=recover_expr_name(ctx.context.callee.expr),
-                            objectTypes=[str(ctx.type)],
+                            objectType=str(ctx.type),
                             attributes=[],
                         ),
                     )

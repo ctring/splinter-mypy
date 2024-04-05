@@ -1,11 +1,8 @@
 import argparse
-import mypy.api
-import pathlib
 import json
 
-from splinter import MESSAGES
+from splinter import run_mypy
 
-CONFIG_FILE = pathlib.Path(__file__).parent.resolve() / "mypy.ini"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("splinter")
@@ -15,14 +12,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    assert (
-        CONFIG_FILE.exists()
-    ), f"Malformed installation. Config file mypy.ini does not exist"
-
-    mypy.api.run([args.path, "--config-file", str(CONFIG_FILE), "--show-traceback"])
-
     output_json = {
-        "messages": MESSAGES,
+        "messages": run_mypy(args.path)[0],
     }
     with open(args.output, "w") as f:
         json.dump(output_json, f, default=lambda o: vars(o), indent=2)
