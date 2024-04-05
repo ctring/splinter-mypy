@@ -127,8 +127,19 @@ class DjangoAnalyzer(Plugin):
     ) -> Union[Callable[[MethodContext], Type], None]:
         """Collects the model method calls."""
 
-        API_READ = ["filter"]
-        API_WRITE = ["save", "delete"]
+        API_READ = [
+            "filter",
+            "all",
+            "get",
+            "exclude",
+            "remove",
+            "add",
+            "aggregate",
+            "first",
+            "last",
+            "count",
+        ]
+        API_WRITE = ["save", "delete", "create", "update"]
 
         def callback(ctx: MethodContext) -> Type:
             if isinstance(ctx.context, CallExpr):
