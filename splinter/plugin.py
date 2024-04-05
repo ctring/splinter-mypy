@@ -2,7 +2,7 @@ import json
 import sys
 from typing import Callable, List, Union
 from mypy.plugin import Plugin, ClassDefContext, MethodContext
-from mypy.nodes import MemberExpr, NameExpr
+from mypy.nodes import MemberExpr, NameExpr, CallExpr
 from mypy.types import Type
 
 from splinter import MESSAGES
@@ -119,7 +119,7 @@ class DjangoAnalyzer(Plugin):
                             ctx.cls.end_line,
                             ctx.cls.column,
                             ctx.cls.end_column,
-                            content=ModelContent(ctx.cls.name),
+                            content=ModelContent(ctx.cls.fullname),
                         )
                         output(message)
 
@@ -131,22 +131,30 @@ class DjangoAnalyzer(Plugin):
         """Collects the model method calls."""
 
         def callback(ctx: MethodContext) -> Type:
-            if "filter" in fullname and "django" in fullname:
-                message = Message(
-                    ctx.api.path,
-                    ctx.context.callee.line,
-                    ctx.context.callee.end_line,
-                    ctx.context.callee.column,
-                    ctx.context.callee.end_column,
-                    content=MethodContent(
-                        name=ctx.context.callee.name,
-                        methodType="read",
-                        object=recover_expr_name(ctx.context.callee),
-                        objectTypes=[str(ctx.type)],
-                        attributes=[],
-                    ),
-                )
-                output(message)
+            if isinstance(ctx.context, CallExpr):
+                methodType = None
+                if ctx.context.callee.name in API_READ:
+                    methodType = "read"
+                elif ctx.context.callee.name in API_WRITE:
+                    methodType = "write"
+
+                if methodType:
+                    message = Message(
+                        ctx.api.path,
+                        ctx.context.callee.line,
+                        ctx.context.callee.end_line,
+                        ctx.context.callee.column,
+                        ctx.context.callee.end_column,
+                        content=MethodContent(
+                            name=ctx.context.callee.name,
+                            methodType=methodType,
+                            object=recover_expr_name(ctx.context.callee.expr),
+                            objectTypes=[str(ctx.type)],
+                            attributes=[],
+                        ),
+                    )
+                    output(message)
+
             return ctx.default_return_type
 
         return callback
