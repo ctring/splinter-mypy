@@ -10,7 +10,7 @@ _DEBUG = False
 
 
 def run_mypy(
-    path: str, excludes: List[str] | None, debug: bool
+    path: str, excludes: List[str], debug: bool
 ) -> Tuple[list, Tuple[str, str, int]]:
     assert _CONFIG_FILE.exists(), f"Config file mypy.ini does not exist"
 
@@ -24,7 +24,7 @@ def run_mypy(
 
 
 def run_mypy_text(
-    text, excludes: List[str] | None = None, debug: bool = False
+    text, excludes: List[str] = [], debug: bool = False
 ) -> Tuple[list, Tuple[str, str, int]]:
     assert _CONFIG_FILE.exists(), f"Config file mypy.ini does not exist"
 
@@ -37,13 +37,12 @@ def run_mypy_text(
     return messages, output
 
 
-def _build_args(excludes: List[str] | None, debug: bool) -> List[str]:
+def _build_args(excludes: List[str], debug: bool) -> List[str]:
     args = ["--config-file", str(_CONFIG_FILE)]
 
-    if excludes:
-        for exclude in excludes:
-            args.append("--exclude")
-            args.append(exclude)
+    for exclude in excludes:
+        args.append("--exclude")
+        args.append(exclude)
 
     global _DEBUG
     _DEBUG = debug

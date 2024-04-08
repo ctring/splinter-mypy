@@ -1,5 +1,6 @@
 import argparse
 import json
+import fnmatch
 
 from splinter import run_mypy
 
@@ -16,10 +17,21 @@ if __name__ == "__main__":
         nargs="*",
         help="Regular expression for matching paths to exclude from analysis",
     )
+    parser.add_argument(
+        "--exclude-glob",
+        nargs="*",
+        help="Glob pattern for matching paths to exclude from analysis",
+    )
     args = parser.parse_args()
 
+    excludes = []
+    if args.exclude:
+        excludes.extend(args.exclude)
+    if args.exclude_glob:
+        excludes.extend([fnmatch.translate(pat) for pat in args.exclude_glob])
+
     output_json = {
-        "messages": run_mypy(args.path, args.exclude, args.debug)[0],
+        "messages": run_mypy(args.path, excludes, args.debug)[0],
     }
     with open(args.output, "w") as f:
         json.dump(output_json, f, default=lambda o: vars(o), indent=2)
