@@ -10,10 +10,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output", default="messages.json", help="Path to the output file"
     )
+    parser.add_argument("--debug", action="store_true", help="Print debug messages")
     args = parser.parse_args()
 
     output_json = {
-        "messages": run_mypy(args.path)[0],
+        "messages": run_mypy(args.path, args.debug)[0],
     }
     with open(args.output, "w") as f:
         json.dump(output_json, f, default=lambda o: vars(o), indent=2)

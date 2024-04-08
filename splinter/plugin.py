@@ -5,7 +5,7 @@ from mypy.plugin import Plugin, ClassDefContext, MethodContext
 from mypy.nodes import MemberExpr, NameExpr, CallExpr
 from mypy.types import Type
 
-from splinter import _MESSAGES, _MODELS
+from splinter import _MESSAGES, _MODELS, _DEBUG
 
 
 class Content:
@@ -79,8 +79,15 @@ class Message:
         self.content = content
 
 
-def debug(*msg):
-    print("DEBUG", *msg, file=sys.stderr)
+def debug(msg):
+    if _DEBUG:
+        if isinstance(msg, Message):
+            print(
+                f"DEBUG: {json.dumps(msg, default=lambda o: vars(o))}",
+                file=sys.stderr,
+            )
+        else:
+            print("DEBUG", *msg, file=sys.stderr)
 
 
 def output(msg: Message):
@@ -89,8 +96,14 @@ def output(msg: Message):
             return
         _MODELS.add(msg.content.name)
 
+    debug(msg)
+
     _MESSAGES.append(msg)
-    print(json.dumps(msg, default=lambda o: vars(o)), file=sys.stderr)
+
+    num_messages = len(_MESSAGES)
+    num_models = len(_MODELS)
+    num_methods = num_messages - num_models
+    print(f"Found {num_models} models and {num_methods} methods")
 
 
 def recover_expr_name(expr):
