@@ -147,29 +147,36 @@ class DjangoAnalyzer(Plugin):
         API_WRITE = ["save", "delete", "create", "update"]
 
         def callback(ctx: MethodContext) -> Type:
-            if isinstance(ctx.context, CallExpr):
-                methodType = None
-                if ctx.context.callee.name in API_READ:
-                    methodType = "read"
-                elif ctx.context.callee.name in API_WRITE:
-                    methodType = "write"
+            # Only consider method calls
+            if not isinstance(ctx.context, CallExpr):
+                return ctx.default_return_type
 
-                if methodType:
-                    message = Message(
-                        ctx.api.path,
-                        ctx.context.line,
-                        ctx.context.end_line,
-                        ctx.context.column,
-                        ctx.context.end_column,
-                        content=MethodContent(
-                            name=ctx.context.callee.name,
-                            methodType=methodType,
-                            object=recover_expr_name(ctx.context.callee.expr),
-                            objectType=str(ctx.type),
-                            attributes=[],
-                        ),
-                    )
-                    output(message)
+            # Skip method call on another call (e.g. functools.wraps(view_func)(wrapped_view))
+            if isinstance(ctx.context.callee, CallExpr):
+                return ctx.default_return_type
+
+            methodType = None
+            if ctx.context.callee.name in API_READ:
+                methodType = "read"
+            elif ctx.context.callee.name in API_WRITE:
+                methodType = "write"
+
+            if methodType:
+                message = Message(
+                    ctx.api.path,
+                    ctx.context.line,
+                    ctx.context.end_line,
+                    ctx.context.column,
+                    ctx.context.end_column,
+                    content=MethodContent(
+                        name=ctx.context.callee.name,
+                        methodType=methodType,
+                        object=recover_expr_name(ctx.context.callee.expr),
+                        objectType=str(ctx.type),
+                        attributes=[],
+                    ),
+                )
+                output(message)
 
             return ctx.default_return_type
 
