@@ -1,7 +1,7 @@
 import mypy.api
 import pathlib
 
-from typing import Tuple
+from typing import Tuple, List
 
 _CONFIG_FILE = pathlib.Path(__file__).parent.resolve() / "mypy.ini"
 _MESSAGES = []
@@ -9,15 +9,12 @@ _MODELS = set()
 _DEBUG = False
 
 
-def run_mypy(path: str, debug: bool) -> Tuple[list, Tuple[str, str, int]]:
+def run_mypy(
+    path: str, excludes: List[str] | None, debug: bool
+) -> Tuple[list, Tuple[str, str, int]]:
     assert _CONFIG_FILE.exists(), f"Config file mypy.ini does not exist"
 
-    args = [path, "--config-file", str(_CONFIG_FILE)]
-
-    global _DEBUG
-    _DEBUG = debug
-    if debug:
-        args.append("--show-traceback")
+    args = [path] + _build_args(excludes, debug)
 
     output = mypy.api.run(args)
 
@@ -26,21 +23,34 @@ def run_mypy(path: str, debug: bool) -> Tuple[list, Tuple[str, str, int]]:
     return messages, output
 
 
-def run_mypy_text(text, debug: bool) -> Tuple[list, Tuple[str, str, int]]:
+def run_mypy_text(
+    text, excludes: List[str] | None = None, debug: bool = False
+) -> Tuple[list, Tuple[str, str, int]]:
     assert _CONFIG_FILE.exists(), f"Config file mypy.ini does not exist"
 
-    args = ["-c", text, "--config-file", str(_CONFIG_FILE)]
-
-    global _DEBUG
-    _DEBUG = debug
-    if debug:
-        args.append("--show-traceback")
+    args = ["-c", text] + _build_args(excludes, debug)
 
     output = mypy.api.run(args)
 
     messages = _get_and_clear_results()
 
     return messages, output
+
+
+def _build_args(excludes: List[str] | None, debug: bool) -> List[str]:
+    args = ["--config-file", str(_CONFIG_FILE)]
+
+    if excludes:
+        for exclude in excludes:
+            args.append("--exclude")
+            args.append(exclude)
+
+    global _DEBUG
+    _DEBUG = debug
+    if debug:
+        args.append("--show-traceback")
+
+    return args
 
 
 def _get_and_clear_results():
