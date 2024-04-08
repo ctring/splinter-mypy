@@ -1,82 +1,26 @@
 import json
 import sys
 from typing import Callable, List, Union
-from mypy.plugin import Plugin, ClassDefContext, MethodContext
-from mypy.nodes import MemberExpr, NameExpr, CallExpr
+from mypy.plugin import (
+    FunctionContext,
+    Plugin,
+    ClassDefContext,
+    MethodContext,
+)
+from mypy.nodes import MemberExpr, NameExpr, CallExpr, Decorator
 from mypy.types import Type
 
-from splinter import _MESSAGES, _MODELS, _DEBUG
-
-
-class Content:
-    type: str
-
-    def __init__(self, type: str):
-        self.type = type
-
-
-class ModelContent(Content):
-    name: str
-
-    def __init__(self, name: str):
-        self.type = "model"
-        self.name = name
-
-
-class Attribute:
-    name: str
-    startLine: str
-    endLine: str
-    startColumn: str
-    endColumn: str
-
-
-class MethodContent(Content):
-    name: str
-    methodType: str
-    object: str
-    objectType: str
-    attributes: List[Attribute]
-
-    def __init__(
-        self,
-        name: str,
-        methodType: str,
-        object: str,
-        objectType: str,
-        attributes: List[Attribute],
-    ):
-        self.type = "method"
-        self.name = name
-        self.methodType = methodType
-        self.object = object
-        self.objectType = objectType
-        self.attributes = attributes
-
-
-class Message:
-    filePath: str
-    fromLine: int
-    toLine: int
-    fromColumn: int
-    toColumn: int
-    content: Content
-
-    def __init__(
-        self,
-        filePath: str,
-        fromLine: int,
-        toLine: int,
-        fromColumn: int,
-        toColumn: int,
-        content: Content,
-    ):
-        self.filePath = filePath
-        self.fromLine = fromLine
-        self.toLine = toLine
-        self.fromColumn = fromColumn
-        self.toColumn = toColumn
-        self.content = content
+from splinter import (
+    _MESSAGES,
+    _LOCATIONS,
+    _STATS,
+    _DEBUG,
+    Message,
+    ModelContent,
+    MethodContent,
+    Location,
+    Content,
+)
 
 
 def debug(msg):
@@ -90,20 +34,19 @@ def debug(msg):
             print("DEBUG", *msg, file=sys.stderr)
 
 
-def output(msg: Message):
-    if isinstance(msg.content, ModelContent):
-        if msg.content.name in _MODELS:
-            return
-        _MODELS.add(msg.content.name)
+def output(location: Location, content: Content):
+    if location in _LOCATIONS:
+        return
+    _LOCATIONS.add(location)
+
+    msg = Message(location, content)
 
     debug(msg)
 
     _MESSAGES.append(msg)
+    _STATS[type(Content)] += 1
 
-    num_messages = len(_MESSAGES)
-    num_models = len(_MODELS)
-    num_methods = num_messages - num_models
-    print(f"Found {num_models} models and {num_methods} methods")
+    print(f"Found {_STATS[ModelContent]} models and {_STATS[MethodContent]} methods")
 
 
 def recover_expr_name(expr):
@@ -158,6 +101,7 @@ class DjangoAnalyzer(Plugin):
             "count",
         ]
         API_WRITE = ["save", "delete", "create", "update"]
+        API_OTHER = ["raw"]
 
         def callback(ctx: MethodContext) -> Type:
             # Only consider method calls
@@ -173,6 +117,8 @@ class DjangoAnalyzer(Plugin):
                 methodType = "read"
             elif ctx.context.callee.name in API_WRITE:
                 methodType = "write"
+            elif ctx.context.callee.name in API_OTHER:
+                methodType = "other"
 
             if methodType:
                 message = Message(
@@ -186,6 +132,39 @@ class DjangoAnalyzer(Plugin):
                         methodType=methodType,
                         object=recover_expr_name(ctx.context.callee.expr),
                         objectType=str(ctx.type),
+                        attributes=[],
+                    ),
+                )
+                output(message)
+
+            return ctx.default_return_type
+
+        return callback
+
+    def get_function_hook(
+        self, fullname: str
+    ) -> Callable[[FunctionContext], Type] | None:
+
+        def callback(ctx: FunctionContext) -> Type:
+            if fullname == "django.db.transaction.atomic":
+                name = "<unknown>"
+                objectType = "<unknown>"
+                if isinstance(ctx.context, Decorator):
+                    name = ctx.context.func.name
+                elif isinstance(ctx.context, CallExpr):
+                    name = "transaction.atomic"
+
+                message = Message(
+                    ctx.api.path,
+                    ctx.context.line,
+                    ctx.context.end_line,
+                    ctx.context.column,
+                    ctx.context.end_column,
+                    content=MethodContent(
+                        name=name,
+                        methodType="transaction",
+                        object="django.db.transaction.atomic",
+                        objectType="django.db.transaction.atomic",
                         attributes=[],
                     ),
                 )
