@@ -26,10 +26,12 @@ from mypy.nodes import (
     SetExpr,
     StrExpr,
     SuperExpr,
+    SymbolNode,
     TempNode,
     TupleExpr,
     TypeInfo,
     UnaryExpr,
+    Var,
 )
 from mypy.types import Type, Instance
 
@@ -56,7 +58,7 @@ def debug(*msg):
             print("DEBUG", *msg, file=sys.stderr)
 
 
-def type_error(expr: Context | Expression, name: str, location: Location):
+def type_error(expr: Context | Expression | SymbolNode, name: str, location: Location):
     raise ValueError(f"Unexpected {name} type: {type(expr)} {expr} at {location}")
 
 
@@ -118,7 +120,12 @@ class DjangoAnalyzer(Plugin):
                     if isinstance(base_type_expr, NameExpr) or isinstance(
                         base_type_expr, MemberExpr
                     ):
-                        if base_type_expr.fullname == "django.db.models.base.Model":
+                        if isinstance(base_type_expr.node, TypeInfo):
+                            base_types = collect_base_types(base_type_expr.node)
+                        else:
+                            continue
+
+                        if "django.db.models.base.Model" in base_types:
                             output(
                                 location,
                                 ModelContent(name=ctx.cls.fullname),
@@ -183,7 +190,6 @@ class DjangoAnalyzer(Plugin):
                         except ValueError as e:
                             raise ValueError(f"{e} at {location}")
 
-                        object_types = set()
                         if isinstance(ctx.type, Instance):
                             object_types = set([str(ctx.type)])
                             object_types.update(collect_base_types(ctx.type.type))

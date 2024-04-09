@@ -13,6 +13,9 @@ class MyModel(models.Model):
     @transaction.atomic
     def my_transaction_method(self):
         pass
+        
+class MyModelChild(MyModel):
+    pass
 
 my_model = MyModel()
 
@@ -66,6 +69,7 @@ class MyQuerySet(models.QuerySet):
 
     expected = [
         ModelContent(name="__main__.MyModel"),
+        ModelContent(name="__main__.MyModelChild"),
         MethodContent(
             name="save",
             methodType="write",
