@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Callable, Union, Set
+from typing import Callable, Union, List
 from mypy.plugin import (
     FunctionContext,
     Plugin,
@@ -88,15 +88,15 @@ def recover_expr_name(expr: Expression):
     raise ValueError(f"Unexpected expression type: {expr}")
 
 
-def collect_base_types(type_info: TypeInfo) -> Set[str]:
+def collect_base_types(type_info: TypeInfo) -> List[str]:
     if type_info.fullname.startswith("builtins") or type_info.fullname.startswith(
         "typing"
     ):
-        return set()
-    types = set([type_info.fullname])
+        return []
+    types = [type_info.fullname]
     for base in type_info.bases:
         if isinstance(base, Instance):
-            types.update(collect_base_types(base.type))
+            types.extend(collect_base_types(base.type))
     return types
 
 
@@ -191,10 +191,13 @@ class DjangoAnalyzer(Plugin):
                             raise ValueError(f"{e} at {location}")
 
                         if isinstance(ctx.type, Instance):
-                            object_types = set([str(ctx.type)])
-                            object_types.update(collect_base_types(ctx.type.type))
+                            object_types = [str(ctx.type)]
+                            object_types.extend(collect_base_types(ctx.type.type))
                         else:
                             type_error(ctx.type, "type", location)
+
+                        # Deduplicate while preserving order
+                        object_types = list(dict.fromkeys(object_types).keys())
 
                         output(
                             location,
@@ -202,7 +205,7 @@ class DjangoAnalyzer(Plugin):
                                 name=ctx.context.callee.name,
                                 methodType=method_type,
                                 object=object_name,
-                                objectTypes=sorted(list(object_types)),
+                                objectTypes=object_types,
                                 attributes=[],
                             ),
                         )
