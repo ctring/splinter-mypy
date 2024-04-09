@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Callable, Union
+from typing import Callable, Union, Set
 from mypy.plugin import (
     FunctionContext,
     Plugin,
@@ -28,6 +28,7 @@ from mypy.nodes import (
     SuperExpr,
     TempNode,
     TupleExpr,
+    TypeInfo,
     UnaryExpr,
 )
 from mypy.types import Type, Instance
@@ -83,6 +84,16 @@ def recover_expr_name(expr: Expression):
         return f"{recover_expr_name(expr.expr)}.{expr.name}"
 
     raise ValueError(f"Unexpected expression type: {expr}")
+
+
+def collect_base_types(type_info: TypeInfo) -> Set[str]:
+    if type_info.fullname.startswith("builtins") or type_info.fullname.startswith("typing"):
+        return set()
+    types = set([type_info.fullname])
+    for base in type_info.bases:
+        if isinstance(base, Instance):
+            types.update(collect_base_types(base.type))
+    return types
 
 
 class DjangoAnalyzer(Plugin):
@@ -166,13 +177,20 @@ class DjangoAnalyzer(Plugin):
                         except ValueError as e:
                             raise ValueError(f"{e} at {location}")
 
+                        object_types = set()
+                        if isinstance(ctx.type, Instance):
+                            object_types = set([str(ctx.type)])
+                            object_types.update(collect_base_types(ctx.type.type))
+                        else:
+                            type_error(ctx.type, "type", location)
+
                         output(
                             location,
                             MethodContent(
                                 name=ctx.context.callee.name,
                                 methodType=method_type,
                                 object=object_name,
-                                objectType=str(ctx.type),
+                                objectTypes=sorted(list(object_types)),
                                 attributes=[],
                             ),
                         )
@@ -275,7 +293,7 @@ class DjangoAnalyzer(Plugin):
                         name=name,
                         methodType="transaction",
                         object="django.db.transaction.atomic",
-                        objectType="django.db.transaction.atomic",
+                        objectTypes=["django.db.transaction.atomic"],
                         attributes=[],
                     ),
                 )

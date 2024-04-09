@@ -46,6 +46,10 @@ get_model(1).objects.all()
 with connection.cursor() as cursor:
     cursor.execute("SELECT * FROM my_model")
 
+class MyQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter()
+
 """,
         debug=True,
     )
@@ -66,63 +70,89 @@ with connection.cursor() as cursor:
             name="save",
             methodType="write",
             object="my_model",
-            objectType="__main__.MyModel",
+            objectTypes=[
+                "__main__.MyModel",
+                "django.db.models.base.Model",
+            ],
             attributes=[],
         ),
         MethodContent(
             name="all",
             methodType="read",
             object="my_model.objects",
-            objectType="django.db.models.manager.Manager[__main__.MyModel]",
+            objectTypes=[
+                "django.db.models.manager.BaseManager",
+                "django.db.models.manager.Manager",
+                "django.db.models.manager.Manager[__main__.MyModel]",
+            ],
             attributes=[],
         ),
         MethodContent(
             name="filter",
             methodType="read",
             object="my_model.objects",
-            objectType="django.db.models.manager.Manager[__main__.MyModel]",
+            objectTypes=[
+                "django.db.models.manager.BaseManager",
+                "django.db.models.manager.Manager",
+                "django.db.models.manager.Manager[__main__.MyModel]",
+            ],
             attributes=[],
         ),
         MethodContent(
             name="raw",
             methodType="other",
             object="my_model.objects",
-            objectType="django.db.models.manager.Manager[__main__.MyModel]",
+            objectTypes=[
+                "django.db.models.manager.BaseManager",
+                "django.db.models.manager.Manager",
+                "django.db.models.manager.Manager[__main__.MyModel]",
+            ],
             attributes=[],
         ),
         MethodContent(
             name="my_transaction_method",
             methodType="transaction",
             object="django.db.transaction.atomic",
-            objectType="django.db.transaction.atomic",
+            objectTypes=["django.db.transaction.atomic"],
             attributes=[],
         ),
         MethodContent(
             name="my_transaction_function",
             methodType="transaction",
             object="django.db.transaction.atomic",
-            objectType="django.db.transaction.atomic",
+            objectTypes=["django.db.transaction.atomic"],
             attributes=[],
         ),
         MethodContent(
             name="with",
             methodType="transaction",
             object="django.db.transaction.atomic",
-            objectType="django.db.transaction.atomic",
+            objectTypes=["django.db.transaction.atomic"],
             attributes=[],
         ),
         MethodContent(
             name="all",
             methodType="read",
             object="get_model().objects",
-            objectType="django.db.models.manager.Manager[__main__.MyModel]",
+            objectTypes=[
+                "django.db.models.manager.BaseManager",
+                "django.db.models.manager.Manager",
+                "django.db.models.manager.Manager[__main__.MyModel]",
+            ],
             attributes=[],
         ),
         MethodContent(
             name="execute",
             methodType="other",
             object="cursor",
-            objectType="django.db.backends.utils.CursorWrapper",
+            objectTypes=["django.db.backends.utils.CursorWrapper"],
+            attributes=[],
+        ),
+        MethodContent(
+            name="filter",
+            methodType="read",
+            object="self",
+            objectTypes=["__main__.MyQuerySet", "django.db.models.query._QuerySet"],
             attributes=[],
         ),
     ]

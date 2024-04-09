@@ -26,7 +26,7 @@ class MethodContent:
     name: str
     methodType: str
     object: str
-    objectType: str
+    objectTypes: List[str]
     attributes: List[Attribute]
     type: str = "method"
 
