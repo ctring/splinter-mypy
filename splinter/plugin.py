@@ -31,9 +31,8 @@ from mypy.nodes import (
     TupleExpr,
     TypeInfo,
     UnaryExpr,
-    Var,
 )
-from mypy.types import Type, Instance
+from mypy.types import Type, Instance, CallableType
 
 from splinter import (
     _MESSAGES,
@@ -171,8 +170,11 @@ class DjangoAnalyzer(Plugin):
                     object_type = str(ctx.type)
 
                     # Ignore all obvious irrelevant types
-                    if object_type.startswith("builtins") or object_type.startswith(
-                        "collections"
+                    if (
+                        object_type.startswith("builtins")
+                        or object_type.startswith("collections")
+                        or object_type.startswith("os")
+                        or object_type.startswith("hashlib")
                     ):
                         return ctx.default_return_type
 
@@ -190,9 +192,11 @@ class DjangoAnalyzer(Plugin):
                         except ValueError as e:
                             raise ValueError(f"{e} at {location}")
 
+                        object_types = [str(ctx.type)]
                         if isinstance(ctx.type, Instance):
-                            object_types = [str(ctx.type)]
                             object_types.extend(collect_base_types(ctx.type.type))
+                        elif isinstance(ctx.type, CallableType):
+                            pass
                         else:
                             type_error(ctx.type, "type", location)
 
