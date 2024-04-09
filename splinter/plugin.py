@@ -126,7 +126,7 @@ class DjangoAnalyzer(Plugin):
             "count",
         ]
         API_WRITE = ["save", "delete", "create", "update"]
-        API_OTHER = ["raw"]
+        API_OTHER = ["raw", "execute"]
 
         def callback(ctx: MethodContext) -> Type:
             location = Location(

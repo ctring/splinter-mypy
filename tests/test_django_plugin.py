@@ -4,7 +4,7 @@ from splinter import run_mypy_text, Location, ModelContent, MethodContent
 def test_everything():
     messages, _ = run_mypy_text(
         """
-from django.db import models, transaction
+from django.db import models, transaction, connection
 
 class MyModel(models.Model):
     name: str
@@ -19,6 +19,7 @@ my_model = MyModel()
 my_model.save()
 my_model.objects.all()
 my_model.objects.filter(name="test")
+my_model.objects.raw("SELECT * FROM my_model")
 
 test_dict = {}
 test_dict.get("test")
@@ -41,6 +42,9 @@ def get_model(x: int) -> MyModel:
     return MyModel()
 
 get_model(1).objects.all()
+
+with connection.cursor() as cursor:
+    cursor.execute("SELECT * FROM my_model")
 
 """,
         debug=True,
@@ -80,6 +84,13 @@ get_model(1).objects.all()
             attributes=[],
         ),
         MethodContent(
+            name="raw",
+            methodType="other",
+            object="my_model.objects",
+            objectType="django.db.models.manager.Manager[__main__.MyModel]",
+            attributes=[],
+        ),
+        MethodContent(
             name="my_transaction_method",
             methodType="transaction",
             object="django.db.transaction.atomic",
@@ -105,6 +116,13 @@ get_model(1).objects.all()
             methodType="read",
             object="get_model().objects",
             objectType="django.db.models.manager.Manager[__main__.MyModel]",
+            attributes=[],
+        ),
+        MethodContent(
+            name="execute",
+            methodType="other",
+            object="cursor",
+            objectType="django.db.backends.utils.CursorWrapper",
             attributes=[],
         ),
     ]
