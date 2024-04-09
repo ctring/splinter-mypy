@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Callable, List, Union
+from typing import Callable, Union
 from mypy.plugin import (
     FunctionContext,
     Plugin,
@@ -19,13 +19,12 @@ from splinter import (
     ModelContent,
     MethodContent,
     Location,
-    Content,
 )
 
 
-def debug(msg):
+def debug(*msg):
     if _DEBUG:
-        if isinstance(msg, Message):
+        if isinstance(msg[0], Message):
             print(
                 f"DEBUG: {json.dumps(msg, default=lambda o: vars(o))}",
                 file=sys.stderr,
@@ -34,7 +33,7 @@ def debug(msg):
             print("DEBUG", *msg, file=sys.stderr)
 
 
-def output(location: Location, content: Content):
+def output(location: Location, content: ModelContent | MethodContent):
     if location in _LOCATIONS:
         return
     _LOCATIONS.add(location)
@@ -44,16 +43,19 @@ def output(location: Location, content: Content):
     debug(msg)
 
     _MESSAGES.append(msg)
-    _STATS[type(Content)] += 1
+    _STATS[type(content)] += 1
 
     print(f"Found {_STATS[ModelContent]} models and {_STATS[MethodContent]} methods")
 
 
-def recover_expr_name(expr):
+def recover_expr_name(expr: MemberExpr | NameExpr):
     if isinstance(expr, NameExpr):
         return expr.name
     if isinstance(expr, MemberExpr):
-        return f"{recover_expr_name(expr.expr)}.{expr.name}"
+        if isinstance(expr.expr, NameExpr) or isinstance(expr.expr, MemberExpr):
+            return f"{recover_expr_name(expr.expr)}.{expr.name}"
+        else:
+            raise ValueError(f"Unexpected expression type: {expr.expr}")
     return None
 
 
@@ -71,15 +73,16 @@ class DjangoAnalyzer(Plugin):
                         or isinstance(base_type_expr, MemberExpr)
                     ) and base_type_expr.fullname == "django.db.models.base.Model":
                         current_file = ctx.api.modules[ctx.api.cur_mod_id]
-                        message = Message(
-                            current_file.path,
-                            ctx.cls.line,
-                            ctx.cls.end_line,
-                            ctx.cls.column,
-                            ctx.cls.end_column,
-                            content=ModelContent(ctx.cls.fullname),
+                        output(
+                            Location(
+                                current_file.path,
+                                ctx.cls.line,
+                                ctx.cls.end_line or ctx.cls.line,
+                                ctx.cls.column,
+                                ctx.cls.end_column or ctx.cls.column,
+                            ),
+                            ModelContent(name=ctx.cls.fullname),
                         )
-                        output(message)
 
         return callback
 
@@ -109,33 +112,38 @@ class DjangoAnalyzer(Plugin):
                 return ctx.default_return_type
 
             # Skip method call on another call (e.g. functools.wraps(view_func)(wrapped_view))
-            if isinstance(ctx.context.callee, CallExpr):
-                return ctx.default_return_type
+            if isinstance(ctx.context.callee, MemberExpr):
+                methodType = None
+                if ctx.context.callee.name in API_READ:
+                    methodType = "read"
+                elif ctx.context.callee.name in API_WRITE:
+                    methodType = "write"
+                elif ctx.context.callee.name in API_OTHER:
+                    methodType = "other"
 
-            methodType = None
-            if ctx.context.callee.name in API_READ:
-                methodType = "read"
-            elif ctx.context.callee.name in API_WRITE:
-                methodType = "write"
-            elif ctx.context.callee.name in API_OTHER:
-                methodType = "other"
-
-            if methodType:
-                message = Message(
-                    ctx.api.path,
-                    ctx.context.line,
-                    ctx.context.end_line,
-                    ctx.context.column,
-                    ctx.context.end_column,
-                    content=MethodContent(
-                        name=ctx.context.callee.name,
-                        methodType=methodType,
-                        object=recover_expr_name(ctx.context.callee.expr),
-                        objectType=str(ctx.type),
-                        attributes=[],
-                    ),
-                )
-                output(message)
+                if methodType:
+                    if not isinstance(
+                        ctx.context.callee.expr, NameExpr
+                    ) and not isinstance(ctx.context.callee.expr, MemberExpr):
+                        raise ValueError(
+                            f"Unexpected expression type: {ctx.context.callee.expr}"
+                        )
+                    output(
+                        Location(
+                            ctx.api.path,
+                            ctx.context.line,
+                            ctx.context.end_line or ctx.context.line,
+                            ctx.context.column,
+                            ctx.context.end_column or ctx.context.column,
+                        ),
+                        MethodContent(
+                            name=ctx.context.callee.name,
+                            methodType=methodType,
+                            object=recover_expr_name(ctx.context.callee.expr),
+                            objectType=str(ctx.type),
+                            attributes=[],
+                        ),
+                    )
 
             return ctx.default_return_type
 
@@ -148,19 +156,20 @@ class DjangoAnalyzer(Plugin):
         def callback(ctx: FunctionContext) -> Type:
             if fullname == "django.db.transaction.atomic":
                 name = "<unknown>"
-                objectType = "<unknown>"
                 if isinstance(ctx.context, Decorator):
                     name = ctx.context.func.name
                 elif isinstance(ctx.context, CallExpr):
-                    name = "transaction.atomic"
+                    name = "with"
 
-                message = Message(
-                    ctx.api.path,
-                    ctx.context.line,
-                    ctx.context.end_line,
-                    ctx.context.column,
-                    ctx.context.end_column,
-                    content=MethodContent(
+                output(
+                    Location(
+                        ctx.api.path,
+                        ctx.context.line,
+                        ctx.context.end_line or ctx.context.line,
+                        ctx.context.column,
+                        ctx.context.end_column or ctx.context.column,
+                    ),
+                    MethodContent(
                         name=name,
                         methodType="transaction",
                         object="django.db.transaction.atomic",
@@ -168,7 +177,6 @@ class DjangoAnalyzer(Plugin):
                         attributes=[],
                     ),
                 )
-                output(message)
 
             return ctx.default_return_type
 

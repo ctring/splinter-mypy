@@ -1,29 +1,18 @@
+from dataclasses import dataclass
 import mypy.api
 import pathlib
 
 from typing import Tuple, List, Set
-from collections import defaultdict, namedtuple
-
-Location = namedtuple(
-    "Location", ["path", "from_line", "to_line", "from_column", "to_column"]
-)
+from collections import defaultdict
 
 
-class Content:
-    type: str
-
-    def __init__(self, type: str):
-        self.type = type
-
-
-class ModelContent(Content):
+@dataclass(frozen=True)
+class ModelContent:
     name: str
-
-    def __init__(self, name: str):
-        self.type = "model"
-        self.name = name
+    type: str = "model"
 
 
+@dataclass(frozen=True)
 class Attribute:
     name: str
     startLine: str
@@ -32,27 +21,23 @@ class Attribute:
     endColumn: str
 
 
-class MethodContent(Content):
+@dataclass(frozen=True)
+class MethodContent:
     name: str
     methodType: str
     object: str
     objectType: str
     attributes: List[Attribute]
+    type: str = "method"
 
-    def __init__(
-        self,
-        name: str,
-        methodType: str,
-        object: str,
-        objectType: str,
-        attributes: List[Attribute],
-    ):
-        self.type = "method"
-        self.name = name
-        self.methodType = methodType
-        self.object = object
-        self.objectType = objectType
-        self.attributes = attributes
+
+@dataclass(frozen=True)
+class Location:
+    path: str
+    from_line: int
+    to_line: int
+    from_column: int
+    to_column: int
 
 
 class Message:
@@ -61,12 +46,12 @@ class Message:
     toLine: int
     fromColumn: int
     toColumn: int
-    content: Content
+    content: ModelContent | MethodContent
 
     def __init__(
         self,
         location: Location,
-        content: Content,
+        content: ModelContent | MethodContent,
     ):
         self.filePath = location.path
         self.fromLine = location.from_line
@@ -85,7 +70,7 @@ _DEBUG = False
 
 def run_mypy(
     path: str, excludes: List[str], debug: bool
-) -> Tuple[list, Tuple[str, str, int]]:
+) -> Tuple[List[Message], Tuple[str, str, int]]:
     assert _CONFIG_FILE.exists(), f"Config file mypy.ini does not exist"
 
     args = [path] + _build_args(excludes, debug)
@@ -99,7 +84,7 @@ def run_mypy(
 
 def run_mypy_text(
     text, excludes: List[str] = [], debug: bool = False
-) -> Tuple[list, Tuple[str, str, int]]:
+) -> Tuple[List[Message], Tuple[str, str, int]]:
     assert _CONFIG_FILE.exists(), f"Config file mypy.ini does not exist"
 
     args = ["-c", text] + _build_args(excludes, debug)
