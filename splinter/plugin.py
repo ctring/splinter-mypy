@@ -7,7 +7,18 @@ from mypy.plugin import (
     ClassDefContext,
     MethodContext,
 )
-from mypy.nodes import MemberExpr, NameExpr, CallExpr, Decorator, IndexExpr
+from mypy.nodes import (
+    CallExpr,
+    Context,
+    ComparisonExpr,
+    Decorator,
+    Expression,
+    IndexExpr,
+    MemberExpr,
+    NameExpr,
+    OperatorAssignmentStmt,
+    UnaryExpr,
+)
 from mypy.types import Type
 
 from splinter import (
@@ -31,6 +42,10 @@ def debug(*msg):
             )
         else:
             print("DEBUG", *msg, file=sys.stderr)
+
+
+def type_error(expr: Context | Expression, name: str, location: Location):
+    raise ValueError(f"Unexpected {name} type: {type(expr)} {expr} at {location}")
 
 
 def output(location: Location, content: ModelContent | MethodContent):
@@ -66,29 +81,28 @@ class DjangoAnalyzer(Plugin):
         """Collects the model definitions."""
 
         def callback(ctx: ClassDefContext):
+            current_file = ctx.api.modules[ctx.api.cur_mod_id]
+            location = Location(
+                current_file.path,
+                ctx.cls.line,
+                ctx.cls.end_line or ctx.cls.line,
+                ctx.cls.column,
+                ctx.cls.end_column or ctx.cls.column,
+            )
             if ctx.cls.base_type_exprs:
                 for base_type_expr in ctx.cls.base_type_exprs:
                     if isinstance(base_type_expr, NameExpr) or isinstance(
                         base_type_expr, MemberExpr
                     ):
                         if base_type_expr.fullname == "django.db.models.base.Model":
-                            current_file = ctx.api.modules[ctx.api.cur_mod_id]
                             output(
-                                Location(
-                                    current_file.path,
-                                    ctx.cls.line,
-                                    ctx.cls.end_line or ctx.cls.line,
-                                    ctx.cls.column,
-                                    ctx.cls.end_column or ctx.cls.column,
-                                ),
+                                location,
                                 ModelContent(name=ctx.cls.fullname),
                             )
                     elif isinstance(base_type_expr, IndexExpr):
                         pass
                     else:
-                        raise ValueError(
-                            f"Unexpected base type expression: {type(base_type_expr)} {base_type_expr}"
-                        )
+                        type_error(base_type_expr, "base type", location)
 
         return callback
 
@@ -113,46 +127,65 @@ class DjangoAnalyzer(Plugin):
         API_OTHER = ["raw"]
 
         def callback(ctx: MethodContext) -> Type:
+            location = Location(
+                ctx.api.path,
+                ctx.context.line,
+                ctx.context.end_line or ctx.context.line,
+                ctx.context.column,
+                ctx.context.end_column or ctx.context.column,
+            )
             # Only consider method calls
-            if not isinstance(ctx.context, CallExpr):
-                return ctx.default_return_type
+            if isinstance(ctx.context, CallExpr):
+                if isinstance(ctx.context.callee, MemberExpr):
+                    object_type = str(ctx.type)
+                    if object_type.startswith("builtins"):
+                        return ctx.default_return_type
 
-            if isinstance(ctx.context.callee, MemberExpr):
-                methodType = None
-                if ctx.context.callee.name in API_READ:
-                    methodType = "read"
-                elif ctx.context.callee.name in API_WRITE:
-                    methodType = "write"
-                elif ctx.context.callee.name in API_OTHER:
-                    methodType = "other"
+                    method_type = None
+                    if ctx.context.callee.name in API_READ:
+                        method_type = "read"
+                    elif ctx.context.callee.name in API_WRITE:
+                        method_type = "write"
+                    elif ctx.context.callee.name in API_OTHER:
+                        method_type = "other"
 
-                if methodType:
-                    if not isinstance(
-                        ctx.context.callee.expr, NameExpr
-                    ) and not isinstance(ctx.context.callee.expr, MemberExpr):
-                        raise ValueError(
-                            f"Unexpected expression type: {ctx.context.callee.expr}"
+                    if method_type:
+                        if not isinstance(
+                            ctx.context.callee.expr, NameExpr
+                        ) and not isinstance(ctx.context.callee.expr, MemberExpr):
+                            raise ValueError(
+                                f"Unexpected expression type: {ctx.context.callee.expr}"
+                            )
+                        output(
+                            location,
+                            MethodContent(
+                                name=ctx.context.callee.name,
+                                methodType=method_type,
+                                object=recover_expr_name(ctx.context.callee.expr),
+                                objectType=str(ctx.type),
+                                attributes=[],
+                            ),
                         )
-                    output(
-                        Location(
-                            ctx.api.path,
-                            ctx.context.line,
-                            ctx.context.end_line or ctx.context.line,
-                            ctx.context.column,
-                            ctx.context.end_column or ctx.context.column,
-                        ),
-                        MethodContent(
-                            name=ctx.context.callee.name,
-                            methodType=methodType,
-                            object=recover_expr_name(ctx.context.callee.expr),
-                            objectType=str(ctx.type),
-                            attributes=[],
-                        ),
-                    )
+                else:
+                    type_error(ctx.context.callee, "callee", location)
+            elif isinstance(ctx.context, IndexExpr):
+                # e.g. Literal["r", "w"]
+                pass
+            elif isinstance(ctx.context, ComparisonExpr):
+                # e.g. sys.version_info >= (3, 10)
+                pass
+            elif isinstance(ctx.context, UnaryExpr):
+                # e.g. -1
+                pass
+            elif isinstance(ctx.context, OperatorAssignmentStmt):
+                # __all__ += ["Annotated", "BinaryIO", "IO", "Match", "Pattern", "TextIO"]
+                pass
+            elif isinstance(ctx.context, Decorator):
+                # @deprecated("load_module() is deprecated; use exec_module() instead")
+                # def load_module()
+                pass
             else:
-                raise ValueError(
-                    f"Unexpected callee type: {type(ctx.context.callee)} {ctx.context.callee}"
-                )
+                type_error(ctx.context, "context", location)
 
             return ctx.default_return_type
 
@@ -163,6 +196,13 @@ class DjangoAnalyzer(Plugin):
     ) -> Callable[[FunctionContext], Type] | None:
 
         def callback(ctx: FunctionContext) -> Type:
+            location = Location(
+                ctx.api.path,
+                ctx.context.line,
+                ctx.context.end_line or ctx.context.line,
+                ctx.context.column,
+                ctx.context.end_column or ctx.context.column,
+            )
             if fullname == "django.db.transaction.atomic":
                 name = "<unknown>"
                 if isinstance(ctx.context, Decorator):
@@ -170,18 +210,10 @@ class DjangoAnalyzer(Plugin):
                 elif isinstance(ctx.context, CallExpr):
                     name = "with"
                 else:
-                    raise ValueError(
-                        f"Unexpected context type: {type(ctx.context)} {ctx.context}"
-                    )
+                    type_error(ctx.context, "context", location)
 
                 output(
-                    Location(
-                        ctx.api.path,
-                        ctx.context.line,
-                        ctx.context.end_line or ctx.context.line,
-                        ctx.context.column,
-                        ctx.context.end_column or ctx.context.column,
-                    ),
+                    location,
                     MethodContent(
                         name=name,
                         methodType="transaction",

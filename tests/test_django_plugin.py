@@ -8,6 +8,7 @@ from django.db import models, transaction
 
 class MyModel(models.Model):
     name: str
+    my_dict: dict[str, str]
 
     @transaction.atomic
     def my_transaction_method(self):
@@ -18,6 +19,14 @@ my_model = MyModel()
 my_model.save()
 my_model.objects.all()
 my_model.objects.filter(name="test")
+
+test_dict = {}
+test_dict.get("test")
+
+test_list = []
+test_list.count()
+
+my_model.my_dict.get("test")
 
 @transaction.atomic
 def my_transaction_function():
