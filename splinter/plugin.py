@@ -9,19 +9,28 @@ from mypy.plugin import (
 )
 from mypy.nodes import (
     CallExpr,
-    Context,
     ComparisonExpr,
+    Context,
+    ConditionalExpr,
     ClassDef,
     Decorator,
     Expression,
+    GeneratorExpr,
     IndexExpr,
+    ListComprehension,
+    ListExpr,
     MemberExpr,
     NameExpr,
     OpExpr,
     OperatorAssignmentStmt,
+    SetExpr,
+    StrExpr,
+    SuperExpr,
+    TempNode,
+    TupleExpr,
     UnaryExpr,
 )
-from mypy.types import Type
+from mypy.types import Type, Instance
 
 from splinter import (
     _MESSAGES,
@@ -169,6 +178,15 @@ class DjangoAnalyzer(Plugin):
                         )
                 elif isinstance(ctx.context.callee, NameExpr):
                     # e.g. with open("file.txt") as f:
+                    #           |--|
+                    pass
+                elif isinstance(ctx.context.callee, CallExpr):
+                    # e.g. functools.wraps(view_func)(wrapped_view)
+                    #      |------------------------|
+                    pass
+                elif isinstance(ctx.context.callee, SuperExpr):
+                    # e.g. super().__init__(*args, **kwargs)
+                    #      |--------------|
                     pass
                 else:
                     type_error(ctx.context.callee, "callee", location)
@@ -199,6 +217,29 @@ class DjangoAnalyzer(Plugin):
                 pass
             elif isinstance(ctx.context, MemberExpr):
                 # e.g. new_options.disable_error_code
+                pass
+            elif isinstance(ctx.context, TupleExpr):
+                pass
+            elif isinstance(ctx.context, ListExpr):
+                pass
+            elif isinstance(ctx.context, GeneratorExpr):
+                # e.g. (attr for attr in copy_attrs if attr in self.__dict__)
+                pass
+            elif isinstance(ctx.context, ListComprehension):
+                # e.g. [connection for connection in connections.all() if connection.vendor == "sqlite"]
+                pass
+            elif isinstance(ctx.context, TempNode):
+                pass
+            elif isinstance(ctx.context, Instance):
+                pass
+            elif isinstance(ctx.context, StrExpr):
+                # e.g. "r"
+                pass
+            elif isinstance(ctx.context, SetExpr):
+                # e.g. {"import_file_name", "input_format"}
+                pass
+            elif isinstance(ctx.context, ConditionalExpr):
+                # e.g. "r" if sys.version_info < (3, 10) else "rb"
                 pass
             else:
                 type_error(ctx.context, "context", location)
