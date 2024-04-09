@@ -34,6 +34,14 @@ def my_transaction_function():
     
 with transaction.atomic():
     pass
+    
+# Mypy does not infer return type even for simple functions
+# See: https://github.com/python/mypy/issues/4409
+def get_model(x: int) -> MyModel:
+    return MyModel()
+
+get_model(1).objects.all()
+
 """,
         debug=True,
     )
@@ -90,6 +98,13 @@ with transaction.atomic():
             methodType="transaction",
             object="django.db.transaction.atomic",
             objectType="django.db.transaction.atomic",
+            attributes=[],
+        ),
+        MethodContent(
+            name="all",
+            methodType="read",
+            object="get_model().objects",
+            objectType="django.db.models.manager.Manager[__main__.MyModel]",
             attributes=[],
         ),
     ]

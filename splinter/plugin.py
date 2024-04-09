@@ -11,11 +11,13 @@ from mypy.nodes import (
     CallExpr,
     Context,
     ComparisonExpr,
+    ClassDef,
     Decorator,
     Expression,
     IndexExpr,
     MemberExpr,
     NameExpr,
+    OpExpr,
     OperatorAssignmentStmt,
     UnaryExpr,
 )
@@ -63,15 +65,15 @@ def output(location: Location, content: ModelContent | MethodContent):
     print(f"Found {_STATS[ModelContent]} models and {_STATS[MethodContent]} methods")
 
 
-def recover_expr_name(expr: MemberExpr | NameExpr):
+def recover_expr_name(expr: Expression):
     if isinstance(expr, NameExpr):
         return expr.name
+    if isinstance(expr, CallExpr):
+        return f"{recover_expr_name(expr.callee)}()"
     if isinstance(expr, MemberExpr):
-        if isinstance(expr.expr, NameExpr) or isinstance(expr.expr, MemberExpr):
-            return f"{recover_expr_name(expr.expr)}.{expr.name}"
-        else:
-            raise ValueError(f"Unexpected expression type: {expr.expr}")
-    return None
+        return f"{recover_expr_name(expr.expr)}.{expr.name}"
+
+    raise ValueError(f"Unexpected expression type: {expr}")
 
 
 class DjangoAnalyzer(Plugin):
@@ -150,22 +152,24 @@ class DjangoAnalyzer(Plugin):
                         method_type = "other"
 
                     if method_type:
-                        if not isinstance(
-                            ctx.context.callee.expr, NameExpr
-                        ) and not isinstance(ctx.context.callee.expr, MemberExpr):
-                            raise ValueError(
-                                f"Unexpected expression type: {ctx.context.callee.expr}"
-                            )
+                        try:
+                            object_name = recover_expr_name(ctx.context.callee.expr)
+                        except ValueError as e:
+                            raise ValueError(f"{e} at {location}")
+
                         output(
                             location,
                             MethodContent(
                                 name=ctx.context.callee.name,
                                 methodType=method_type,
-                                object=recover_expr_name(ctx.context.callee.expr),
+                                object=object_name,
                                 objectType=str(ctx.type),
                                 attributes=[],
                             ),
                         )
+                elif isinstance(ctx.context.callee, NameExpr):
+                    # e.g. with open("file.txt") as f:
+                    pass
                 else:
                     type_error(ctx.context.callee, "callee", location)
             elif isinstance(ctx.context, IndexExpr):
@@ -178,11 +182,23 @@ class DjangoAnalyzer(Plugin):
                 # e.g. -1
                 pass
             elif isinstance(ctx.context, OperatorAssignmentStmt):
+                # e.g.
                 # __all__ += ["Annotated", "BinaryIO", "IO", "Match", "Pattern", "TextIO"]
                 pass
             elif isinstance(ctx.context, Decorator):
+                # e.g.
                 # @deprecated("load_module() is deprecated; use exec_module() instead")
                 # def load_module()
+                pass
+            elif isinstance(ctx.context, OpExpr):
+                # e.g. CONFIG_FILE + PYPROJECT_CONFIG_FILES
+                pass
+            elif isinstance(ctx.context, NameExpr):
+                pass
+            elif isinstance(ctx.context, ClassDef):
+                pass
+            elif isinstance(ctx.context, MemberExpr):
+                # e.g. new_options.disable_error_code
                 pass
             else:
                 type_error(ctx.context, "context", location)
