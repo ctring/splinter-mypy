@@ -7,7 +7,7 @@ from mypy.plugin import (
     ClassDefContext,
     MethodContext,
 )
-from mypy.nodes import MemberExpr, NameExpr, CallExpr, Decorator
+from mypy.nodes import MemberExpr, NameExpr, CallExpr, Decorator, IndexExpr
 from mypy.types import Type
 
 from splinter import (
@@ -68,20 +68,26 @@ class DjangoAnalyzer(Plugin):
         def callback(ctx: ClassDefContext):
             if ctx.cls.base_type_exprs:
                 for base_type_expr in ctx.cls.base_type_exprs:
-                    if (
-                        isinstance(base_type_expr, NameExpr)
-                        or isinstance(base_type_expr, MemberExpr)
-                    ) and base_type_expr.fullname == "django.db.models.base.Model":
-                        current_file = ctx.api.modules[ctx.api.cur_mod_id]
-                        output(
-                            Location(
-                                current_file.path,
-                                ctx.cls.line,
-                                ctx.cls.end_line or ctx.cls.line,
-                                ctx.cls.column,
-                                ctx.cls.end_column or ctx.cls.column,
-                            ),
-                            ModelContent(name=ctx.cls.fullname),
+                    if isinstance(base_type_expr, NameExpr) or isinstance(
+                        base_type_expr, MemberExpr
+                    ):
+                        if base_type_expr.fullname == "django.db.models.base.Model":
+                            current_file = ctx.api.modules[ctx.api.cur_mod_id]
+                            output(
+                                Location(
+                                    current_file.path,
+                                    ctx.cls.line,
+                                    ctx.cls.end_line or ctx.cls.line,
+                                    ctx.cls.column,
+                                    ctx.cls.end_column or ctx.cls.column,
+                                ),
+                                ModelContent(name=ctx.cls.fullname),
+                            )
+                    elif isinstance(base_type_expr, IndexExpr):
+                        pass
+                    else:
+                        raise ValueError(
+                            f"Unexpected base type expression: {type(base_type_expr)} {base_type_expr}"
                         )
 
         return callback
@@ -111,7 +117,6 @@ class DjangoAnalyzer(Plugin):
             if not isinstance(ctx.context, CallExpr):
                 return ctx.default_return_type
 
-            # Skip method call on another call (e.g. functools.wraps(view_func)(wrapped_view))
             if isinstance(ctx.context.callee, MemberExpr):
                 methodType = None
                 if ctx.context.callee.name in API_READ:
@@ -144,6 +149,10 @@ class DjangoAnalyzer(Plugin):
                             attributes=[],
                         ),
                     )
+            else:
+                raise ValueError(
+                    f"Unexpected callee type: {type(ctx.context.callee)} {ctx.context.callee}"
+                )
 
             return ctx.default_return_type
 
@@ -160,6 +169,10 @@ class DjangoAnalyzer(Plugin):
                     name = ctx.context.func.name
                 elif isinstance(ctx.context, CallExpr):
                     name = "with"
+                else:
+                    raise ValueError(
+                        f"Unexpected context type: {type(ctx.context)} {ctx.context}"
+                    )
 
                 output(
                     Location(

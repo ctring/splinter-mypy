@@ -89,4 +89,4 @@ with transaction.atomic():
         assert content in expected, f"Unexpected item: {content}"
         expected.remove(content)
 
-    assert not expected, f"Missing item: {expected}"
+    assert not expected, f"Missing items: {expected}"
