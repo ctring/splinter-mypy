@@ -87,7 +87,9 @@ def recover_expr_name(expr: Expression):
 
 
 def collect_base_types(type_info: TypeInfo) -> Set[str]:
-    if type_info.fullname.startswith("builtins") or type_info.fullname.startswith("typing"):
+    if type_info.fullname.startswith("builtins") or type_info.fullname.startswith(
+        "typing"
+    ):
         return set()
     types = set([type_info.fullname])
     for base in type_info.bases:
@@ -160,7 +162,11 @@ class DjangoAnalyzer(Plugin):
             if isinstance(ctx.context, CallExpr):
                 if isinstance(ctx.context.callee, MemberExpr):
                     object_type = str(ctx.type)
-                    if object_type.startswith("builtins"):
+
+                    # Ignore all obvious irrelevant types
+                    if object_type.startswith("builtins") or object_type.startswith(
+                        "collections"
+                    ):
                         return ctx.default_return_type
 
                     method_type = None
