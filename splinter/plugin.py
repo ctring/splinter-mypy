@@ -129,6 +129,18 @@ class DjangoAnalyzer(Plugin):
                                 location,
                                 ModelContent(name=ctx.cls.fullname),
                             )
+
+                        if "django_filters.filterset.FilterSet" in base_types:
+                            output(
+                                location,
+                                MethodContent(
+                                    name=ctx.cls.fullname,
+                                    methodType="read",
+                                    object="FilterSet",
+                                    objectTypes=["FilterSet"],
+                                    attributes=[],
+                                ),
+                            )
                     elif isinstance(base_type_expr, IndexExpr):
                         pass
                     elif isinstance(base_type_expr, CallExpr):
@@ -170,7 +182,14 @@ class DjangoAnalyzer(Plugin):
             "last",
             "count",
         ]
-        API_WRITE = ["save", "delete", "create", "update"]
+        API_WRITE = [
+            "save",
+            "delete",
+            "create",
+            "update",
+            "update_or_create",
+            "get_or_create",
+        ]
         API_OTHER = ["raw", "execute"]
 
         def callback(ctx: MethodContext) -> Type:
