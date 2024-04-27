@@ -30,8 +30,10 @@ if __name__ == "__main__":
     if args.exclude_glob:
         excludes.extend([fnmatch.translate(pat) for pat in args.exclude_glob])
 
-    output_json = {
-        "messages": run_mypy(args.path, excludes, args.debug)[0],
-    }
+    messages, (stdout, stderr, _) = run_mypy(args.path, excludes, args.debug)
+    output_json = {"messages": messages}
     with open(args.output, "w") as f:
         json.dump(output_json, f, default=lambda o: vars(o), indent=2)
+    if args.debug:
+        print("STDOUT", stdout)
+        print("STDERR", stderr)

@@ -6,6 +6,7 @@ def test_everything():
         """
 from django.db import models, transaction, connection
 
+# Detect model
 class MyModel(models.Model):
     name: str
     my_dict: dict[str, str]
@@ -14,6 +15,7 @@ class MyModel(models.Model):
     def my_transaction_method(self):
         pass
         
+# Detect model inheritance
 class MyModelChild(MyModel):
     pass
 
@@ -24,14 +26,14 @@ my_model.objects.all()
 my_model.objects.filter(name="test")
 my_model.objects.raw("SELECT * FROM my_model")
 
+# Ignore built-in types
 test_dict = {}
 test_dict.get("test")
-
 test_list = []
 test_list.count()
-
 my_model.my_dict.get("test")
 
+# Detect transaction
 @transaction.atomic
 def my_transaction_function():
     pass
@@ -46,13 +48,22 @@ def get_model(x: int) -> MyModel:
 
 get_model(1).objects.all()
 
+# Detect cursor
 with connection.cursor() as cursor:
     cursor.execute("SELECT * FROM my_model")
 
+# Detect custom QuerySet
 class MyQuerySet(models.QuerySet):
     def active(self):
         return self.filter()
 
+# Detect model inside an object
+class Wrapper:
+    def __init__(self):
+        self.model = MyModel()
+
+wrapper = Wrapper()
+wrapper.model.objects.filter(name="test")
 """,
         debug=True,
     )
@@ -157,6 +168,17 @@ class MyQuerySet(models.QuerySet):
             methodType="read",
             object="self",
             objectTypes=["__main__.MyQuerySet", "django.db.models.query._QuerySet"],
+            attributes=[],
+        ),
+        MethodContent(
+            name="filter",
+            methodType="read",
+            object="wrapper.model.objects",
+            objectTypes=[
+                "django.db.models.manager.Manager[__main__.MyModel]",
+                "django.db.models.manager.Manager",
+                "django.db.models.manager.BaseManager",
+            ],
             attributes=[],
         ),
     ]
