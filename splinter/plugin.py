@@ -131,6 +131,23 @@ class DjangoAnalyzer(Plugin):
                             )
                     elif isinstance(base_type_expr, IndexExpr):
                         pass
+                    elif isinstance(base_type_expr, CallExpr):
+                        # e.g.
+                        #   class Url(
+                        #     typing.NamedTuple(
+                        #         "Url",
+                        #         [
+                        #             ("scheme", typing.Optional[str]),
+                        #             ("auth", typing.Optional[str]),
+                        #             ("host", typing.Optional[str]),
+                        #             ("port", typing.Optional[int]),
+                        #             ("path", typing.Optional[str]),
+                        #             ("query", typing.Optional[str]),
+                        #             ("fragment", typing.Optional[str]),
+                        #         ],
+                        #     )
+                        # ):
+                        pass
                     else:
                         type_error(base_type_expr, "base type", location)
 

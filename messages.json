@@ -1,0 +1,407 @@
+{
+  "messages": [
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/sites/models.pyi",
+      "fromLine": 13,
+      "toLine": 18,
+      "fromColumn": 0,
+      "toColumn": 44,
+      "content": {
+        "name": "django.contrib.sites.models.Site",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/admin/models.pyi",
+      "fromLine": 23,
+      "toLine": 37,
+      "fromColumn": 0,
+      "toColumn": 46,
+      "content": {
+        "name": "django.contrib.admin.models.LogEntry",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/contenttypes/models.pyi",
+      "fromLine": 14,
+      "toLine": 24,
+      "fromColumn": 0,
+      "toColumn": 49,
+      "content": {
+        "name": "django.contrib.contenttypes.models.ContentType",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/auth/base_user.pyi",
+      "fromLine": 16,
+      "toLine": 43,
+      "fromColumn": 0,
+      "toColumn": 58,
+      "content": {
+        "name": "django.contrib.auth.base_user.AbstractBaseUser",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/auth/models.pyi",
+      "fromLine": 22,
+      "toLine": 29,
+      "fromColumn": 0,
+      "toColumn": 54,
+      "content": {
+        "name": "django.contrib.auth.models.Permission",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/auth/models.pyi",
+      "fromLine": 34,
+      "toLine": 39,
+      "fromColumn": 0,
+      "toColumn": 44,
+      "content": {
+        "name": "django.contrib.auth.models.Group",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/auth/models.pyi",
+      "fromLine": 59,
+      "toLine": 71,
+      "fromColumn": 0,
+      "toColumn": 59,
+      "content": {
+        "name": "django.contrib.auth.models.PermissionsMixin",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/auth/models.pyi",
+      "fromLine": 73,
+      "toLine": 95,
+      "fromColumn": 0,
+      "toColumn": 18,
+      "content": {
+        "name": "django.contrib.auth.models.AbstractUser",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "/home/ctring/src/readwrite/splinter-mypy/venv/lib/python3.12/site-packages/django-stubs/contrib/auth/models.pyi",
+      "fromLine": 97,
+      "toLine": 97,
+      "fromColumn": 0,
+      "toColumn": 29,
+      "content": {
+        "name": "django.contrib.auth.models.User",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 10,
+      "toLine": 20,
+      "fromColumn": 0,
+      "toColumn": 49,
+      "content": {
+        "name": "api.models.Base",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 23,
+      "toLine": 39,
+      "fromColumn": 0,
+      "toColumn": 44,
+      "content": {
+        "name": "api.models.Duration",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 42,
+      "toLine": 60,
+      "fromColumn": 0,
+      "toColumn": 54,
+      "content": {
+        "name": "api.models.Label",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 63,
+      "toLine": 100,
+      "fromColumn": 0,
+      "toColumn": 40,
+      "content": {
+        "name": "api.models.Playbook",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 103,
+      "toLine": 117,
+      "fromColumn": 0,
+      "toColumn": 59,
+      "content": {
+        "name": "api.models.FileContent",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 120,
+      "toLine": 135,
+      "fromColumn": 0,
+      "toColumn": 52,
+      "content": {
+        "name": "api.models.File",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 138,
+      "toLine": 154,
+      "fromColumn": 0,
+      "toColumn": 53,
+      "content": {
+        "name": "api.models.Record",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 157,
+      "toLine": 179,
+      "fromColumn": 0,
+      "toColumn": 52,
+      "content": {
+        "name": "api.models.Play",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 182,
+      "toLine": 217,
+      "fromColumn": 0,
+      "toColumn": 52,
+      "content": {
+        "name": "api.models.Task",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 220,
+      "toLine": 241,
+      "fromColumn": 0,
+      "toColumn": 52,
+      "content": {
+        "name": "api.models.Host",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 244,
+      "toLine": 262,
+      "fromColumn": 0,
+      "toColumn": 46,
+      "content": {
+        "name": "api.models.LatestHost",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/models.py",
+      "fromLine": 265,
+      "toLine": 305,
+      "fromColumn": 0,
+      "toColumn": 57,
+      "content": {
+        "name": "api.models.Result",
+        "type": "model"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/tests/tests_auth.py",
+      "fromLine": 21,
+      "toLine": 21,
+      "fromColumn": 32,
+      "toColumn": 48,
+      "content": {
+        "name": "get",
+        "methodType": "read",
+        "object": "factory",
+        "objectTypes": [
+          "django.test.client.RequestFactory",
+          "django.test.client._RequestFactory"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/api/tests/tests_auth.py",
+      "fromLine": 26,
+      "toLine": 26,
+      "fromColumn": 34,
+      "toColumn": 50,
+      "content": {
+        "name": "get",
+        "methodType": "read",
+        "object": "factory",
+        "objectTypes": [
+          "django.test.client.RequestFactory",
+          "django.test.client._RequestFactory"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/truncatepath.py",
+      "fromLine": 12,
+      "toLine": 12,
+      "fromColumn": 1,
+      "toColumn": 37,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/strip_db.py",
+      "fromLine": 9,
+      "toLine": 9,
+      "fromColumn": 1,
+      "toColumn": 33,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/pygments_highlights.py",
+      "fromLine": 15,
+      "toLine": 15,
+      "fromColumn": 1,
+      "toColumn": 36,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/pygments_highlights.py",
+      "fromLine": 31,
+      "toLine": 31,
+      "fromColumn": 1,
+      "toColumn": 36,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/diff_result.py",
+      "fromLine": 35,
+      "toLine": 35,
+      "fromColumn": 1,
+      "toColumn": 36,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/datetime_formatting.py",
+      "fromLine": 12,
+      "toLine": 12,
+      "fromColumn": 1,
+      "toColumn": 46,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/datetime_formatting.py",
+      "fromLine": 17,
+      "toLine": 17,
+      "fromColumn": 1,
+      "toColumn": 40,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    },
+    {
+      "filePath": "../repos/django/ara/ara/ui/templatetags/datetime_formatting.py",
+      "fromLine": 24,
+      "toLine": 24,
+      "fromColumn": 1,
+      "toColumn": 36,
+      "content": {
+        "name": "filter",
+        "methodType": "read",
+        "object": "register",
+        "objectTypes": [
+          "django.template.library.Library"
+        ],
+        "attributes": [],
+        "type": "method"
+      }
+    }
+  ]
+}
