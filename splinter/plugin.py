@@ -8,6 +8,7 @@ from mypy.plugin import (
     MethodContext,
 )
 from mypy.nodes import (
+    AwaitExpr,
     CallExpr,
     ComparisonExpr,
     Context,
@@ -33,8 +34,17 @@ from mypy.nodes import (
     UnaryExpr,
     IntExpr,
     SliceExpr,
+    DictExpr,
 )
-from mypy.types import Type, Instance, CallableType, Overloaded
+from mypy.types import (
+    Type,
+    Instance,
+    CallableType,
+    Overloaded,
+    TypedDictType,
+    ParamSpecType,
+    TypeType,
+)
 
 from splinter import (
     _MESSAGES,
@@ -89,6 +99,12 @@ def recover_expr_name(expr: Expression):
         return f"{recover_expr_name(expr.base)}[{recover_expr_name(expr.index)}]"
     if isinstance(expr, SliceExpr):
         return f"_:_"
+    if isinstance(expr, StrExpr):
+        return f'"{expr.value}"'
+    if isinstance(expr, IntExpr):
+        return f"{expr.value}"
+    if isinstance(expr, SuperExpr):
+        return "super()"
 
     raise ValueError(f"Unexpected expression type: {expr}")
 
@@ -243,6 +259,20 @@ class DjangoAnalyzer(Plugin):
                             # i.e dict.update(self, iterable)
                             #     |--|
                             pass
+                        elif isinstance(ctx.type, TypedDictType):
+                            # i.e
+                            # class LegacyEditHistoryEvent(TypedDict, total=False):
+                            #   user_id: int
+                            #   timestamp: int
+                            #
+                            # event: LegacyEditHistoryEvent = ...
+                            # event.get("user_id")
+                            # |---|
+                            pass
+                        elif isinstance(ctx.type, ParamSpecType):
+                            pass
+                        elif isinstance(ctx.type, TypeType):
+                            pass
                         else:
                             type_error(ctx.type, "object type", location)
 
@@ -270,6 +300,10 @@ class DjangoAnalyzer(Plugin):
                 elif isinstance(ctx.context.callee, SuperExpr):
                     # e.g. super().__init__(*args, **kwargs)
                     #      |--------------|
+                    pass
+                elif isinstance(ctx.context.callee, IndexExpr):
+                    # e.g. self.manager_type_mapper[execution.manager_type](execution)
+                    #      |----------------------------------------------|
                     pass
                 else:
                     type_error(ctx.context.callee, "callee", location)
@@ -326,6 +360,15 @@ class DjangoAnalyzer(Plugin):
                 pass
             elif isinstance(ctx.context, IntExpr):
                 # e.g. 0
+                pass
+            elif isinstance(ctx.context, SuperExpr):
+                # e.g super().content
+                pass
+            elif isinstance(ctx.context, AwaitExpr):
+                # e.g await asyncio.sleep(1)
+                pass
+            elif isinstance(ctx.context, DictExpr):
+                # e.g {"import_file_name": "input_format"}
                 pass
             else:
                 type_error(ctx.context, "context", location)
