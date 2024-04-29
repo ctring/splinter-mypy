@@ -31,8 +31,10 @@ from mypy.nodes import (
     TupleExpr,
     TypeInfo,
     UnaryExpr,
+    IntExpr,
+    SliceExpr,
 )
-from mypy.types import Type, Instance, CallableType
+from mypy.types import Type, Instance, CallableType, Overloaded
 
 from splinter import (
     _MESSAGES,
@@ -83,6 +85,10 @@ def recover_expr_name(expr: Expression):
         return f"{recover_expr_name(expr.callee)}()"
     if isinstance(expr, MemberExpr):
         return f"{recover_expr_name(expr.expr)}.{expr.name}"
+    if isinstance(expr, IndexExpr):
+        return f"{recover_expr_name(expr.base)}[{recover_expr_name(expr.index)}]"
+    if isinstance(expr, SliceExpr):
+        return f"_:_"
 
     raise ValueError(f"Unexpected expression type: {expr}")
 
@@ -233,8 +239,12 @@ class DjangoAnalyzer(Plugin):
                             object_types.extend(collect_base_types(ctx.type.type))
                         elif isinstance(ctx.type, CallableType):
                             pass
+                        elif isinstance(ctx.type, Overloaded):
+                            # i.e dict.update(self, iterable)
+                            #     |--|
+                            pass
                         else:
-                            type_error(ctx.type, "type", location)
+                            type_error(ctx.type, "object type", location)
 
                         # Deduplicate while preserving order
                         object_types = list(dict.fromkeys(object_types).keys())
@@ -313,6 +323,9 @@ class DjangoAnalyzer(Plugin):
                 pass
             elif isinstance(ctx.context, ConditionalExpr):
                 # e.g. "r" if sys.version_info < (3, 10) else "rb"
+                pass
+            elif isinstance(ctx.context, IntExpr):
+                # e.g. 0
                 pass
             else:
                 type_error(ctx.context, "context", location)
