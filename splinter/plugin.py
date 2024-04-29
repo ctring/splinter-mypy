@@ -370,6 +370,9 @@ class DjangoAnalyzer(Plugin):
             elif isinstance(ctx.context, DictExpr):
                 # e.g {"import_file_name": "input_format"}
                 pass
+            elif isinstance(ctx.context, SliceExpr):
+                # e.g. _[:]
+                pass
             else:
                 type_error(ctx.context, "context", location)
 
