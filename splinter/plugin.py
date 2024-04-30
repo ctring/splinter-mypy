@@ -203,6 +203,18 @@ class DjangoAnalyzer(Plugin):
             "first",
             "last",
             "count",
+            "exclude",
+            "distinct",
+            "values",
+            "values_list",
+            "latest",
+            "earliest",
+            "first",
+            "last",
+            "dates",
+            "datetimes",
+            "exists",
+            "extra",
         ]
         API_WRITE = [
             "save",
@@ -211,6 +223,8 @@ class DjangoAnalyzer(Plugin):
             "update",
             "update_or_create",
             "get_or_create",
+            "bulk_create",
+            "bulk_update",
         ]
         API_OTHER = ["raw", "execute"]
 
