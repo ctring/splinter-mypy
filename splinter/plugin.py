@@ -44,6 +44,7 @@ from mypy.types import (
     TypedDictType,
     ParamSpecType,
     TypeType,
+    TypeVarType,
 )
 
 from splinter import (
@@ -286,6 +287,8 @@ class DjangoAnalyzer(Plugin):
                         elif isinstance(ctx.type, ParamSpecType):
                             pass
                         elif isinstance(ctx.type, TypeType):
+                            pass
+                        elif isinstance(ctx.type, TypeVarType):
                             pass
                         else:
                             type_error(ctx.type, "object type", location)
