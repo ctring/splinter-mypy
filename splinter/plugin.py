@@ -35,6 +35,7 @@ from mypy.nodes import (
     IntExpr,
     SliceExpr,
     DictExpr,
+    BytesExpr,
 )
 from mypy.types import (
     Type,
@@ -106,6 +107,10 @@ def recover_expr_name(expr: Expression):
         return f"{expr.value}"
     if isinstance(expr, SuperExpr):
         return "super()"
+    if isinstance(expr, OpExpr):
+        return (
+            f"{recover_expr_name(expr.left)} {expr.op} {recover_expr_name(expr.right)}"
+        )
 
     raise ValueError(f"Unexpected expression type: {expr}")
 
@@ -389,6 +394,9 @@ class DjangoAnalyzer(Plugin):
                 pass
             elif isinstance(ctx.context, SliceExpr):
                 # e.g. _[:]
+                pass
+            elif isinstance(ctx.context, BytesExpr):
+                # e.g. b"Hello"
                 pass
             else:
                 type_error(ctx.context, "context", location)
