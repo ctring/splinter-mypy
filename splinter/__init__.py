@@ -15,10 +15,10 @@ class ModelContent:
 @dataclass(frozen=True)
 class Attribute:
     name: str
-    startLine: str
-    endLine: str
-    startColumn: str
-    endColumn: str
+    startLine: int
+    endLine: int
+    startColumn: int
+    endColumn: int
 
 
 @dataclass(frozen=True)

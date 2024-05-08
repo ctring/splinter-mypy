@@ -53,6 +53,7 @@ from splinter import (
     _LOCATIONS,
     _STATS,
     _DEBUG,
+    Attribute,
     Message,
     ModelContent,
     MethodContent,
@@ -256,12 +257,13 @@ class DjangoAnalyzer(Plugin):
                     ):
                         return ctx.default_return_type
 
+                    method_name = ctx.context.callee.name
                     method_type = None
-                    if ctx.context.callee.name in API_READ:
+                    if method_name in API_READ:
                         method_type = "read"
-                    elif ctx.context.callee.name in API_WRITE:
+                    elif method_name in API_WRITE:
                         method_type = "write"
-                    elif ctx.context.callee.name in API_OTHER:
+                    elif method_name in API_OTHER:
                         method_type = "other"
 
                     if method_type:
@@ -301,14 +303,28 @@ class DjangoAnalyzer(Plugin):
                         # Deduplicate while preserving order
                         object_types = list(dict.fromkeys(object_types).keys())
 
+                        attributes = []
+                        if method_name in ["get", "filter"]:
+                            for arg_name, arg in zip(
+                                ctx.context.arg_names, ctx.context.args
+                            ):
+                                if arg_name:
+                                    attributes.append(Attribute(
+                                        name=arg_name,
+                                        startLine=arg.line,
+                                        endLine=arg.end_line or arg.line,
+                                        startColumn=arg.column - len(arg_name) - 1,
+                                        endColumn=arg.end_column or arg.column,
+                                    ))
+
                         output(
                             location,
                             MethodContent(
-                                name=ctx.context.callee.name,
+                                name=method_name,
                                 methodType=method_type,
                                 object=object_name,
                                 objectTypes=object_types,
-                                attributes=[],
+                                attributes=attributes,
                             ),
                         )
                 elif isinstance(ctx.context.callee, NameExpr):
