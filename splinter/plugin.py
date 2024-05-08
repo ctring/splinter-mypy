@@ -36,6 +36,7 @@ from mypy.nodes import (
     SliceExpr,
     DictExpr,
     BytesExpr,
+    DictionaryComprehension
 )
 from mypy.types import (
     Type,
@@ -309,13 +310,15 @@ class DjangoAnalyzer(Plugin):
                                 ctx.context.arg_names, ctx.context.args
                             ):
                                 if arg_name:
-                                    attributes.append(Attribute(
-                                        name=arg_name,
-                                        startLine=arg.line,
-                                        endLine=arg.end_line or arg.line,
-                                        startColumn=arg.column - len(arg_name) - 1,
-                                        endColumn=arg.end_column or arg.column,
-                                    ))
+                                    attributes.append(
+                                        Attribute(
+                                            name=arg_name,
+                                            startLine=arg.line,
+                                            endLine=arg.end_line or arg.line,
+                                            startColumn=arg.column - len(arg_name) - 1,
+                                            endColumn=arg.end_column or arg.column,
+                                        )
+                                    )
 
                         output(
                             location,
@@ -413,6 +416,9 @@ class DjangoAnalyzer(Plugin):
                 pass
             elif isinstance(ctx.context, BytesExpr):
                 # e.g. b"Hello"
+                pass
+            elif isinstance(ctx.context, DictionaryComprehension):
+                # e.g. {key: value for key, value in zip(keys, values)}
                 pass
             else:
                 type_error(ctx.context, "context", location)
