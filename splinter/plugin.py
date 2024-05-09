@@ -36,7 +36,8 @@ from mypy.nodes import (
     SliceExpr,
     DictExpr,
     BytesExpr,
-    DictionaryComprehension
+    FloatExpr,
+    DictionaryComprehension,
 )
 from mypy.types import (
     Type,
@@ -47,6 +48,7 @@ from mypy.types import (
     ParamSpecType,
     TypeType,
     TypeVarType,
+    TupleType,
 )
 
 from splinter import (
@@ -298,6 +300,8 @@ class DjangoAnalyzer(Plugin):
                             pass
                         elif isinstance(ctx.type, TypeVarType):
                             pass
+                        elif isinstance(ctx.type, TupleType):
+                            pass
                         else:
                             type_error(ctx.type, "object type", location)
 
@@ -345,6 +349,10 @@ class DjangoAnalyzer(Plugin):
                 elif isinstance(ctx.context.callee, IndexExpr):
                     # e.g. self.manager_type_mapper[execution.manager_type](execution)
                     #      |----------------------------------------------|
+                    pass
+                elif isinstance(ctx.context.callee, OpExpr):
+                    # e.g. (dblQuotedString | _token)("term").addParseAction(TermToken)
+                    #      |-----------------------------------------------|
                     pass
                 else:
                     type_error(ctx.context.callee, "callee", location)
@@ -419,6 +427,9 @@ class DjangoAnalyzer(Plugin):
                 pass
             elif isinstance(ctx.context, DictionaryComprehension):
                 # e.g. {key: value for key, value in zip(keys, values)}
+                pass
+            elif isinstance(ctx.context, FloatExpr):
+                # e.g. 0.0
                 pass
             else:
                 type_error(ctx.context, "context", location)
