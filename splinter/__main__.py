@@ -34,6 +34,6 @@ if __name__ == "__main__":
     output_json = {"messages": messages}
     with open(args.output, "w") as f:
         json.dump(output_json, f, default=lambda o: vars(o), indent=2)
-    if args.debug:
-        print("STDOUT", stdout)
+    print(stdout)
+    if args.debug and stderr:
         print("STDERR", stderr)
