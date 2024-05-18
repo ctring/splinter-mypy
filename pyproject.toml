@@ -1,7 +1,7 @@
 [project]
 name = "splinter"
-version = "0.0.1"
-dependencies = ["mypy", "django-stubs", "django-filter-stubs"]
+version = "0.1.0"
+dependencies = ["mypy", "django-stubs", "django-filter-stubs", "vstutils"]
 
 [build-system]
 requires = ["setuptools"]
