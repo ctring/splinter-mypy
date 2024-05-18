@@ -163,8 +163,13 @@ def analyze(path: str, excludes: List[str] | None) -> Messages:
             visitor.accept(tree)
 
     def visit_model(
-        info: SplinterVisitor.ModelInfo, target_model: str
+        info: SplinterVisitor.ModelInfo, target_model: str, visited: set[str]
     ) -> ModelContent | MethodContent | None:
+        if info.name in visited:
+            return None
+
+        visited.add(info.name)
+
         for parent in info.parents:
             if parent in ["django.db.models.Model", "django.db.models.base.Model"]:
                 return ModelContent(name=target_model)
@@ -179,14 +184,14 @@ def analyze(path: str, excludes: List[str] | None) -> Messages:
                 )
 
             if parent in models:
-                res = visit_model(models[parent], target_model)
+                res = visit_model(models[parent], target_model, visited)
                 if res is not None:
                     return res
 
         return None
 
     for model, info in models.items():
-        res = visit_model(info, model)
+        res = visit_model(info, model, set())
         if res is not None:
             messages.add(info.location, res)
 
@@ -396,13 +401,13 @@ def recover_expr_str(cur_expr: mypy.nodes.Expression):
             return f"{recover_expr_str(expr)}.{name}"
         case mypy.nodes.IndexExpr(base=base, index=index):
             return f"{recover_expr_str(base)}[{recover_expr_str(index)}]"
-        case mypy.nodes.SliceExpr:
+        case mypy.nodes.SliceExpr():
             return f"_:_"
         case mypy.nodes.StrExpr(value=value):
             return f'"{value}"'
         case mypy.nodes.IntExpr(value=value):
             return f"{value}"
-        case mypy.nodes.SuperExpr:
+        case mypy.nodes.SuperExpr():
             return "super()"
         case mypy.nodes.OpExpr(left=left, op=op, right=right):
             return f"{recover_expr_str(left)} {op} {recover_expr_str(right)}"
