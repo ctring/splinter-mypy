@@ -136,19 +136,23 @@ class Messages:
 def analyze(path: str, excludes: List[str] | None) -> Messages:
     print("Scanning files")
     files, opt = mypy.main.process_options([path])
+
+    # Remove excluded files
+    excluded_globs = ["**/venv/**"]
+    if excludes:
+        excluded_globs.extend(excludes)
+    excluded_files: set[str] = set()
+    for eg in excluded_globs:
+        found = glob.glob(eg, recursive=True, root_dir=path)
+        excluded_files.update([os.path.join(path, f) for f in found])
+    files = [f for f in files if f.path not in excluded_files]
+
+    # Set options
     opt.preserve_asts = True
     opt.export_types = True
     opt.check_untyped_defs = True
     opt.follow_imports = "silent"
     opt.incremental = False
-
-    excludes_pat = ["**/venv/**"]
-    if excludes:
-        excludes_pat.extend(excludes)
-    excluded_files = []
-    for excluded_glob in excludes_pat:
-        excluded_files.extend(glob.glob(excluded_glob, recursive=True, root_dir=path))
-    opt.exclude = [os.path.join(path, file) for file in excluded_files]
 
     print("Parsing files")
     result = mypy.build.build(files, opt)
