@@ -175,7 +175,11 @@ def analyze(path: str, excludes: List[str] | None) -> Messages:
         visited.add(info.name)
 
         for parent in info.parents:
-            if parent in ["django.db.models.Model", "django.db.models.base.Model"]:
+            if parent in [
+                "django.db.models.Model",
+                "django.db.models.base.Model",
+                "mptt.models.MPTTModel",
+            ]:
                 return ModelContent(name=target_model)
 
             if parent in ["django_filters.filterset.FilterSet"]:
