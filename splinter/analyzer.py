@@ -421,5 +421,7 @@ def recover_expr_str(cur_expr: mypy.nodes.Expression):
             return f"{recover_expr_str(left)} {op} {recover_expr_str(right)}"
         case mypy.nodes.UnaryExpr(op=op, expr=expr):
             return f"{op}{recover_expr_str(expr)}"
+        case mypy.nodes.DictExpr():
+            return f"{{}}"
         case _:
             raise ValueError(f"Unexpected expression type: {cur_expr}")
