@@ -179,6 +179,8 @@ def analyze(path: str, excludes: List[str] | None) -> Messages:
                 "django.db.models.Model",
                 "django.db.models.base.Model",
                 "mptt.models.MPTTModel",
+                "polymorphic.models.PolymorphicModel",
+                "seal.models.SealableModel",
             ]:
                 return ModelContent(name=target_model)
 
@@ -423,5 +425,9 @@ def recover_expr_str(cur_expr: mypy.nodes.Expression):
             return f"{op}{recover_expr_str(expr)}"
         case mypy.nodes.DictExpr():
             return f"{{}}"
+        case mypy.nodes.ListExpr():
+            return f"[]"
+        case mypy.nodes.TupleExpr():
+            return f"()"
         case _:
             raise ValueError(f"Unexpected expression type: {cur_expr}")
