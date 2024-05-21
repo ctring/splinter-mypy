@@ -2,7 +2,7 @@
 name = "splinter"
 version = "0.1.0"
 dependencies = [
-    "mypy", "django-stubs", "django-filter-stubs",
+    "mypy", "django-stubs", "django-filter-stubs", "django_extensions",
     # These dependencies are required for the repositories to be analyzed, and not
     # this repository itself.
     "vstutils", "easy-thumbnails"
