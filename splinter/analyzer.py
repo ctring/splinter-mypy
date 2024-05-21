@@ -181,6 +181,7 @@ def analyze(path: str, excludes: List[str] | None) -> Messages:
                 "mptt.models.MPTTModel",
                 "polymorphic.models.PolymorphicModel",
                 "seal.models.SealableModel",
+                "django_extensions.db.models.TimeStampedModel"
             ]:
                 return ModelContent(name=target_model)
 
