@@ -350,7 +350,7 @@ class SplinterVisitor(MypyVisitor):
                 obj_types = list(dict.fromkeys(obj_types).keys())
 
                 attributes = []
-                if method_name in ["get", "filter"]:
+                if method_name in ["get", "filter", "exclude"]:
                     for arg_name, arg in zip(o.arg_names, o.args):
                         if arg_name:
                             attributes.append(
