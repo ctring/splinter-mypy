@@ -12,7 +12,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--exclude",
-        nargs="*",
+        action="append",
+        default=["**/venv/**"],
         help="Glob pattern for matching paths to exclude from analysis",
     )
     args = parser.parse_args()

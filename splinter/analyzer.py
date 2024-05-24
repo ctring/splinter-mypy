@@ -133,16 +133,13 @@ class Messages:
         )
 
 
-def analyze(path: str, excludes: List[str] | None) -> Messages:
+def analyze(path: str, excludes: List[str]) -> Messages:
     print("Scanning files")
     files, opt = mypy.main.process_options([path])
 
     # Remove excluded files
-    excluded_globs = ["**/venv/**"]
-    if excludes:
-        excluded_globs.extend(excludes)
     excluded_files: set[str] = set()
-    for eg in excluded_globs:
+    for eg in excludes:
         found = glob.glob(eg, recursive=True, root_dir=path)
         excluded_files.update([os.path.join(path, f) for f in found])
     files = [f for f in files if f.path not in excluded_files]
