@@ -429,5 +429,7 @@ def recover_expr_str(cur_expr: mypy.nodes.Expression):
             return f"()"
         case mypy.nodes.ConditionalExpr(cond=cond, if_expr=if_expr, else_expr=else_expr):
             return f"{recover_expr_str(if_expr)} if {recover_expr_str(cond)} else {recover_expr_str(else_expr)}"
+        case mypy.nodes.AssignmentExpr(target=target, value=value):
+            return f"{recover_expr_str(target)} := {recover_expr_str(value)}"
         case _:
             raise ValueError(f"Unexpected expression type: {cur_expr}")
