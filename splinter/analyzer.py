@@ -177,8 +177,14 @@ def analyze(path: str, excludes: List[str]) -> Messages:
                 "django.db.models.base.Model",
                 "mptt.models.MPTTModel",
                 "polymorphic.models.PolymorphicModel",
+                # For the anyant/rssant project
                 "seal.models.SealableModel",
-                "django_extensions.db.models.TimeStampedModel"
+                # For the readthedocs/readthedocs.org project
+                "django_extensions.db.models.TimeStampedModel",
+                # For the shuup/shuup project
+                "parler.models.TranslatableModel",
+                # For the openedx/edx-platform project
+                "model_utils.models.TimeStampedModel",
             ]:
                 return ModelContent(name=target_model)
 
@@ -427,7 +433,9 @@ def recover_expr_str(cur_expr: mypy.nodes.Expression):
             return f"[]"
         case mypy.nodes.TupleExpr():
             return f"()"
-        case mypy.nodes.ConditionalExpr(cond=cond, if_expr=if_expr, else_expr=else_expr):
+        case mypy.nodes.ConditionalExpr(
+            cond=cond, if_expr=if_expr, else_expr=else_expr
+        ):
             return f"{recover_expr_str(if_expr)} if {recover_expr_str(cond)} else {recover_expr_str(else_expr)}"
         case mypy.nodes.AssignmentExpr(target=target, value=value):
             return f"{recover_expr_str(target)} := {recover_expr_str(value)}"
