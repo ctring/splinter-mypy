@@ -353,19 +353,12 @@ class SplinterVisitor(MypyVisitor):
                 # Deduplicate while preserving order
                 obj_types = list(dict.fromkeys(obj_types).keys())
 
-                attributes = []
-                if method_name in ["get", "filter", "exclude"]:
-                    for arg_name, arg in zip(o.arg_names, o.args):
-                        if arg_name:
-                            attributes.append(
-                                Attribute(
-                                    name=arg_name,
-                                    startLine=arg.line,
-                                    endLine=arg.end_line or arg.line,
-                                    startColumn=arg.column - len(arg_name) - 1,
-                                    endColumn=arg.end_column or arg.column,
-                                )
-                            )
+                attributes = (
+                    collect_args(o)
+                    if method_name in ["get", "filter", "exclude"]
+                    else []
+                )
+
                 self.messages.add(
                     location,
                     MethodContent(
@@ -405,6 +398,7 @@ def collect_base_types(type_info: mypy.nodes.TypeInfo) -> List[str]:
     return types
 
 
+# TODO: This can be implemented with a visitor
 def recover_expr_str(cur_expr: mypy.nodes.Expression):
     match cur_expr:
         case mypy.nodes.NameExpr(name=name):
@@ -441,3 +435,44 @@ def recover_expr_str(cur_expr: mypy.nodes.Expression):
             return f"{recover_expr_str(target)} := {recover_expr_str(value)}"
         case _:
             raise ValueError(f"Unexpected expression type: {cur_expr}")
+
+
+class ArgVisitor(MypyVisitor):
+    def __init__(self):
+        self.args = []
+
+    def visit_call_expr(self, o: mypy.nodes.CallExpr):
+        is_q_visitor = ArgVisitor.IsQ()
+        is_q_visitor.accept(o.callee)
+        if is_q_visitor.is_q:
+            self.args.extend(collect_args(o))
+
+    class IsQ(MypyVisitor):
+        def __init__(self):
+            self.is_q = False
+
+        def visit_member_expr(self, o: mypy.nodes.MemberExpr):
+            self.is_q = o.name == "Q"
+
+        def visit_name_expr(self, o: mypy.nodes.NameExpr):
+            self.is_q = o.name.endswith("Q")
+
+
+def collect_args(o: mypy.nodes.CallExpr) -> List[Attribute]:
+    result = []
+    for arg_name, arg in zip(o.arg_names, o.args):
+        if arg_name:
+            result.append(
+                Attribute(
+                    name=arg_name,
+                    startLine=arg.line,
+                    endLine=arg.end_line or arg.line,
+                    startColumn=arg.column - len(arg_name) - 1,
+                    endColumn=arg.end_column or arg.column,
+                )
+            )
+        else:
+            arg_visitor = ArgVisitor()
+            arg_visitor.accept(arg)
+            result.extend(arg_visitor.args)
+    return result
