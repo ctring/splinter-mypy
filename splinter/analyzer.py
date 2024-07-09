@@ -355,9 +355,17 @@ class SplinterVisitor(MypyVisitor):
 
                 attributes = (
                     collect_args(o)
-                    if method_name in ["get", "filter", "exclude"]
+                    if method_name
+                    in ["get", "filter", "exclude", "get_or_create", "update_or_create"]
                     else []
                 )
+
+                if method_name in ["get_or_create", "update_or_create"]:
+                    attributes = [
+                        attr
+                        for attr in attributes
+                        if attr.name != "defaults" and attr.name != "create_defaults"
+                    ]
 
                 self.messages.add(
                     location,
